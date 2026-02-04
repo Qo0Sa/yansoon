@@ -6,8 +6,16 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FDDC33BB2F3371E20021D586 /* TheYearofTheCamel-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = FDDC33BA2F3371E20021D586 /* TheYearofTheCamel-Bold.otf */; };
+		FDDC33BD2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = FDDC33BC2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		36E1D6202F2F92BA0012AF65 /* yansoon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = yansoon.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FDDC33BA2F3371E20021D586 /* TheYearofTheCamel-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "TheYearofTheCamel-Bold.otf"; sourceTree = "<group>"; };
+		FDDC33BC2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "TheYearofHandicrafts-Bold.otf"; sourceTree = "<group>"; };
+		FDDC33BE2F33735E0021D586 /* yansoon-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "yansoon-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +40,8 @@
 		36E1D6172F2F92BA0012AF65 = {
 			isa = PBXGroup;
 			children = (
-				36E1D6222F2F92BA0012AF65 /* yansoon */,
+				FDDC33BE2F33735E0021D586 /* yansoon-Info.plist */,
+				FDDC33B92F3371BF0021D586 /* FontsApp */,
 				36E1D6212F2F92BA0012AF65 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +52,16 @@
 				36E1D6202F2F92BA0012AF65 /* yansoon.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FDDC33B92F3371BF0021D586 /* FontsApp */ = {
+			isa = PBXGroup;
+			children = (
+				36E1D6222F2F92BA0012AF65 /* yansoon */,
+				FDDC33BA2F3371E20021D586 /* TheYearofTheCamel-Bold.otf */,
+				FDDC33BC2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf */,
+			);
+			path = FontsApp;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -109,6 +128,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FDDC33BD2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf in Resources */,
+				FDDC33BB2F3371E20021D586 /* TheYearofTheCamel-Bold.otf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,6 +274,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "yansoon-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -284,6 +306,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "yansoon-Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

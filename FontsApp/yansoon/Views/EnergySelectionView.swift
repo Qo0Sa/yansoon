@@ -19,7 +19,7 @@ struct EnergySelectionView: View {
                     .font(AppFont.main(size: 16))
                     .opacity(0.7)
             }
-            .foregroundColor(.white)
+            .foregroundColor(Color("PrimaryText"))
             .padding(.top, 50)
             
             Spacer()
@@ -89,11 +89,11 @@ struct EnergyButton: View {
                 
                 Text(level.title)
                     .font(AppFont.main(size: 20))
-                    .foregroundColor(selected == level ? Color("PrimaryButtons") : .white)
+                    .foregroundColor(selected == level ? Color("PrimaryButtons") : Color("PrimaryText"))
                 
                 Text(sub)
                     .font(AppFont.main(size: 14))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(Color("PrimaryText").opacity(0.5))
             }
         }
         .buttonStyle(PlainButtonStyle()) // Prevents default grey highlight on tap
@@ -101,5 +101,6 @@ struct EnergyButton: View {
 }
 #Preview {
     EnergySelectionView()
-        .preferredColorScheme(.dark)
+    .preferredColorScheme(.dark)
 }
+

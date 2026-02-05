@@ -11,7 +11,8 @@ import SwiftUI
 struct EnergySelectionView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @StateObject private var selectionVM = EnergySelectionViewModel()
-    
+    //@EnvironmentObject var appState: AppStateViewModel
+
     @State private var shouldNavigate = false
     
     var body: some View {
@@ -49,7 +50,14 @@ struct EnergySelectionView: View {
             Spacer()
             
             // Glass/Solid Button logic
-            Button(action: { /* Proceed to Task Input */ }) {
+            Button(action: {    guard let selected = selectionVM.selectedLevel else { return }
+                
+                // تحديث الـ currentMode في AppState
+                appState.currentMode = selected
+                
+                // التنقل إلى ToDoView
+                shouldNavigate = true
+            }) {
                 Text("Continue")
                     .font(AppFont.main(size: 20))
                     .foregroundColor(.black)
@@ -107,7 +115,21 @@ struct EnergyButton: View {
         .buttonStyle(PlainButtonStyle()) // Prevents default grey highlight on tap
     }
 }
-#Preview {
-    EnergySelectionView()
-        .preferredColorScheme(.dark)
+
+//#Preview {
+//    EnergySelectionView()
+//        .preferredColorScheme(.dark)
+//
+//}
+
+
+struct EnergySelectionView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            EnergySelectionView()
+                .environmentObject(AppStateViewModel()) // 👈 مهم جداً
+                .preferredColorScheme(.dark)
+        }
+    }
 }
+

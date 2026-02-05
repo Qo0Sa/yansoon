@@ -28,11 +28,7 @@ struct ToDoView: View {
                         
                         Spacer()
                         
-                        // Anise Icon
-                        Image("AniseShape")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 35, height: 35)
+                       
                     }
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
@@ -43,6 +39,12 @@ struct ToDoView: View {
                 // MARK: - Progress Section
                 VStack(spacing: 12) {
                     HStack {
+                        //بعدل هذي على حسب الليفل الي مختاره تتغير
+                        Image(energyImage(for: appState.currentMode))
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 35, height: 35)
+                        
                         Text("Total Hours")
                             .font(AppFont.main(size: 16))
                             .foregroundColor(.white)
@@ -135,17 +137,14 @@ struct ToDoView: View {
 //            TaskTimerView(task: task)
 //                .environmentObject(appState)
 //        }
+        .navigationBarBackButtonHidden(true)
+
     }
     
-    // MARK: - Helper
-    private func energyIcon(for level: EnergyLevel) -> String {
-        switch level {
-        case .high: return "bolt.fill"
-        case .medium: return "bolt.circle.fill"
-        case .low: return "bolt.slash.fill"
-        }
-    }
+
 }
+
+
 
 // MARK: - Task Row Component
 struct TaskRow: View {
@@ -155,33 +154,32 @@ struct TaskRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                // Dot indicator
-                Circle()
-                    .fill(Color("PrimaryButtons"))
-                    .frame(width: 8, height: 8)
                 
+                // LEFT: Circle أو Checkmark حسب التايمر
+                if task.isTimerRunning {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Color("PrimaryButtons"))
+                        .frame(width: 20, height: 20)
+                        .transition(.scale) // حركة عند التحول
+                } else {
+                    Circle()
+                        .fill(Color("PrimaryButtons"))
+                        .frame(width: 8, height: 8)
+                        .transition(.scale)
+                }
+                
+                // معلومات المهمة
                 VStack(alignment: .leading, spacing: 4) {
                     Text(task.title)
                         .font(AppFont.main(size: 16))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.leading)
                     
-                    // Show progress if any work done
-                    if task.actualMinutes > 0 {
-                        Text("\(task.actualTimeFormatted) / \(task.estimatedTimeFormatted)")
-                            .font(AppFont.main(size: 12))
-                            .foregroundColor(Color("PrimaryButtons").opacity(0.7))
-                    }
+                   
                 }
                 
-                Spacer()
+                Spacer() // لدفع المحتوى لليسار
                 
-                // Checkmark if completed
-                if task.isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(Color("ProgressBar"))
-                }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -190,8 +188,11 @@ struct TaskRow: View {
                     .fill(Color.white.opacity(0.05))
             )
         }
+        .buttonStyle(PlainButtonStyle())
+        .animation(.spring(), value: task.isTimerRunning) // تحديث تلقائي عند تغير التايمر
     }
 }
+
 
 
 
@@ -313,14 +314,17 @@ struct ModeSelectionSheet: View {
         }
     }
     
+}
+    
+    
     private func energyImage(for level: EnergyLevel) -> String {
         switch level {
-        case .high: return "AniseHigh"
-        case .medium: return "AniseMedium"
-        case .low: return "AniseLow"
+        case .high: return "yansoonStatus/high"
+        case .medium: return "yansoonStatus/medium"
+        case .low: return "yansoonStatus/low"
         }
     }
-}
+
 
 
 

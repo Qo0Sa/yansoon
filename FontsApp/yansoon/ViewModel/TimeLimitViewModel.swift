@@ -9,10 +9,13 @@
 import SwiftUI
 import Foundation
 import Combine
+
 class TimeLimitViewModel: ObservableObject {
     @Published var currentLevel: EnergyLevel = .high
     @Published var selectedMinutes: Double = 0.0
-    @Published var isSetupComplete: Bool = false // Logic for transition
+    
+    // Reference to shared app state
+    weak var appState: AppStateViewModel?
     
     var formattedTime: String {
         let hours = Int(selectedMinutes) / 60
@@ -29,12 +32,19 @@ class TimeLimitViewModel: ObservableObject {
     }
     
     func nextLevel() {
+        // Save current level hours to AppState
+        if let appState = appState {
+            let hours = selectedMinutes / 60.0
+            appState.updateHours(hours, for: currentLevel)
+        }
+        
+        // Move to next level or finish setup
         if let next = EnergyLevel(rawValue: currentLevel.rawValue + 1) {
             currentLevel = next
             selectedMinutes = 0.0
         } else {
             // After Low Energy, the setup is finished
-            isSetupComplete = true
+            appState?.completeSetup()
         }
     }
 }

@@ -6,17 +6,10 @@
 //  Created by Noor Alhassani on 16/08/1447 AH.
 //
 //
-//  TimeLimitView.swift
-//  yansoon
-//
-//  Created by Noor Alhassani on 16/08/1447 AH.
-//
 
 import SwiftUI
 
-
 struct TimeLimitView: View {
-    // Corrected: Accept the injected ViewModel from MainFlowView
     @ObservedObject var viewModel: TimeLimitViewModel
     
     var body: some View {
@@ -57,7 +50,6 @@ struct TimeLimitView: View {
                 // Buttons Section
                 VStack(spacing: 20) {
                     Button(action: { viewModel.nextLevel() }) {
-                        // Correct: Changes to "Done" on the last step
                         Text(viewModel.currentLevel == .low ? "Done" : "Next")
                             .font(AppFont.main(size: 20))
                             .foregroundColor(.black)
@@ -102,6 +94,18 @@ struct CircularSliderComponent: View {
         viewModel.selectedMinutes / (viewModel.currentLevel.maxHours * 60)
     }
     
+    // Helper function to pick the right asset based on level
+    private func imageName(for level: EnergyLevel) -> String {
+        switch level {
+        case .high:
+            return "yansoonStatus/high"
+        case .medium:
+            return "yansoonStatus/medium"
+        case .low:
+            return "yansoonStatus/low"
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Background Track
@@ -117,11 +121,12 @@ struct CircularSliderComponent: View {
                 .frame(width: sliderSize, height: sliderSize)
                 .rotationEffect(.degrees(-90))
             
-            // Center Anise Image (Asset)
-            Image("AniseShape")
+            // Center Anise Image - Now DYNAMIC
+            Image(imageName(for: viewModel.currentLevel))
                 .resizable()
                 .scaledToFit()
                 .frame(width: 220, height: 220)
+                .animation(.easeInOut, value: viewModel.currentLevel)
             
             // Knob - Locked to the bar
             Circle()
@@ -149,4 +154,12 @@ struct CircularSliderComponent: View {
         let snapped = (totalMinutes / 5).rounded() * 5
         viewModel.selectedMinutes = min(viewModel.currentLevel.maxHours * 60, max(0, snapped))
     }
+}
+#Preview {
+    let mockVM = TimeLimitViewModel()
+    // You can set it to .medium or .low here to see different versions!
+    mockVM.currentLevel = .high
+    
+    return TimeLimitView(viewModel: mockVM)
+        .preferredColorScheme(.dark)
 }

@@ -10,8 +10,9 @@ import SwiftUI
 struct yansoonApp: App {
     var body: some Scene {
         WindowGroup {
-            // This ensures the first screen the user sees is the time adjustment
-            TimeLimitView()
+            // MainFlowView handles the logic for switching between
+            // TimeLimitView and EnergySelectionView
+            MainFlowView()
         }
     }
 }

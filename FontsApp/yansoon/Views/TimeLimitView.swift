@@ -14,15 +14,17 @@
 
 import SwiftUI
 
+
 struct TimeLimitView: View {
-    @StateObject private var viewModel = TimeLimitViewModel()
+    // Corrected: Accept the injected ViewModel from MainFlowView
+    @ObservedObject var viewModel: TimeLimitViewModel
     
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
             
             VStack(spacing: 25) {
-                // Header - Updated to use AppFont
+                // Header
                 Text("Time Limits")
                     .font(AppFont.main(size: 24))
                     .foregroundColor(Color("PrimaryButtons"))
@@ -45,7 +47,7 @@ struct TimeLimitView: View {
                 // Slider Section
                 CircularSliderComponent(viewModel: viewModel)
                 
-                // Time Display - Updated to use AppFont
+                // Time Display
                 Text(viewModel.formattedTime)
                     .font(AppFont.main(size: 80))
                     .foregroundColor(.white)
@@ -55,20 +57,19 @@ struct TimeLimitView: View {
                 // Buttons Section
                 VStack(spacing: 20) {
                     Button(action: { viewModel.nextLevel() }) {
-                        Text("Next")
+                        // Correct: Changes to "Done" on the last step
+                        Text(viewModel.currentLevel == .low ? "Done" : "Next")
                             .font(AppFont.main(size: 20))
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                             .background(
-                                // Glass Effect for Primary Button
                                 Color("PrimaryButtons")
                                     .opacity(0.9)
                                     .blur(radius: 0.5)
                             )
                             .cornerRadius(15)
                     }
-                    
                     Button(action: { viewModel.setDefault() }) {
                         Text("Set by Default")
                             .font(AppFont.main(size: 18))

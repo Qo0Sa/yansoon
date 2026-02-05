@@ -11,7 +11,8 @@ import Foundation
 import Combine
 class TimeLimitViewModel: ObservableObject {
     @Published var currentLevel: EnergyLevel = .high
-    @Published var selectedMinutes: Double = 300
+    @Published var selectedMinutes: Double = 0.0
+    @Published var isSetupComplete: Bool = false // Logic for transition
     
     var formattedTime: String {
         let hours = Int(selectedMinutes) / 60
@@ -30,7 +31,10 @@ class TimeLimitViewModel: ObservableObject {
     func nextLevel() {
         if let next = EnergyLevel(rawValue: currentLevel.rawValue + 1) {
             currentLevel = next
-            selectedMinutes = 60
+            selectedMinutes = 0.0
+        } else {
+            // After Low Energy, the setup is finished
+            isSetupComplete = true
         }
     }
 }

@@ -26,11 +26,11 @@ struct TimeLimitView: View {
                 VStack(spacing: 12) {
                     Text("Set your working hours based on energy")
                         .font(AppFont.main(size: 18))
-                        .foregroundColor(.white)
+                        .foregroundColor(Color("PrimaryText"))
                     
                     Text(viewModel.currentLevel.title)
                         .font(AppFont.main(size: 18))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor((Color("PrimaryText")).opacity(0.7))
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -43,7 +43,7 @@ struct TimeLimitView: View {
                 // Time Display
                 Text(viewModel.formattedTime)
                     .font(AppFont.main(size: 80))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color("PrimaryText"))
                 
                 Spacer()
                 
@@ -110,7 +110,7 @@ struct CircularSliderComponent: View {
         ZStack {
             // Background Track
             Circle()
-                .stroke(Color.white.opacity(0.1), lineWidth: 10)
+                .stroke((Color("PrimaryText")).opacity(0.1), lineWidth: 10)
                 .frame(width: sliderSize, height: sliderSize)
             
             // Progress Bar

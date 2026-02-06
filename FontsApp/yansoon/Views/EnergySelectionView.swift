@@ -59,16 +59,20 @@ struct EnergySelectionView: View {
                 shouldNavigate = true
             }) {
                 Text("Continue")
-                    .font(AppFont.main(size: 20))
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(selectionVM.selectedLevel != nil ? Color("PrimaryButtons") : Color.gray.opacity(0.3))
-                    )
+                                 .font(AppFont.main(size: 20))
+                                  .foregroundColor(.black)
+                                  .frame(maxWidth: .infinity)
+                                  .padding(.vertical, 18)
+                                  .background(
+                                      RoundedRectangle(cornerRadius: 15)
+                                          .fill(selectionVM.selectedLevel != nil ? Color("PrimaryButtons") : Color.gray.opacity(0.3))
+                                )
             }
         }
+      //  .disabled(selectionVM.selectedLevel == nil)
+                  .padding(.horizontal, 30)
+                .padding(.bottom, 40)
+      
         .onAppear {
             selectionVM.appState = appState
         }
@@ -76,6 +80,8 @@ struct EnergySelectionView: View {
             ToDoView()
                 .environmentObject(appState)
         }
+            .background(Color("Background").ignoresSafeArea())
+
     }
 }
 
@@ -123,13 +129,8 @@ struct EnergyButton: View {
 //}
 
 
-struct EnergySelectionView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationStack {
-            EnergySelectionView()
-                .environmentObject(AppStateViewModel()) // 👈 مهم جداً
-                .preferredColorScheme(.dark)
-        }
-    }
+#Preview {
+    EnergySelectionView()
+        .environmentObject(AppStateViewModel())
+        .preferredColorScheme(.dark)
 }
-

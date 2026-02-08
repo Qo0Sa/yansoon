@@ -5,15 +5,12 @@
 //  Created by Sarah on 17/08/1447 AH.
 //
 
-
 import Foundation
 
 class StorageManager {
     static let shared = StorageManager()
-    
     private let defaults = UserDefaults.standard
     
-    // MARK: - Keys
     private enum Keys {
         static let energySettings = "energySettings"
         static let currentMode = "currentMode"
@@ -21,7 +18,6 @@ class StorageManager {
         static let setupComplete = "setupComplete"
     }
     
-    // MARK: - Energy Settings
     func saveEnergySettings(_ settings: EnergySettings) {
         if let encoded = try? JSONEncoder().encode(settings) {
             defaults.set(encoded, forKey: Keys.energySettings)
@@ -36,7 +32,6 @@ class StorageManager {
         return settings
     }
     
-    // MARK: - Current Mode
     func saveCurrentMode(_ mode: EnergyLevel) {
         defaults.set(mode.rawValue, forKey: Keys.currentMode)
     }
@@ -46,22 +41,20 @@ class StorageManager {
         return EnergyLevel(rawValue: rawValue)
     }
     
-    // MARK: - Tasks
-    func saveTasks(_ tasks: [Task]) {
+    func saveTasks(_ tasks: [TodoTask]) {
         if let encoded = try? JSONEncoder().encode(tasks) {
             defaults.set(encoded, forKey: Keys.tasks)
         }
     }
     
-    func loadTasks() -> [Task] {
+    func loadTasks() -> [TodoTask] {
         guard let data = defaults.data(forKey: Keys.tasks),
-              let tasks = try? JSONDecoder().decode([Task].self, from: data) else {
+              let tasks = try? JSONDecoder().decode([TodoTask].self, from: data) else {
             return []
         }
         return tasks
     }
     
-    // MARK: - Setup Status
     func setSetupComplete(_ complete: Bool) {
         defaults.set(complete, forKey: Keys.setupComplete)
     }
@@ -70,7 +63,6 @@ class StorageManager {
         return defaults.bool(forKey: Keys.setupComplete)
     }
     
-    // MARK: - Clear All Data (للتجربة)
     func clearAll() {
         defaults.removeObject(forKey: Keys.energySettings)
         defaults.removeObject(forKey: Keys.currentMode)

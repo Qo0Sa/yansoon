@@ -22,8 +22,8 @@ enum EnergyLevel: Int, CaseIterable {
     var maxHours: Double {
         switch self {
         case .high: return 12
-        case .medium: return 8
-        case .low: return 6
+        case .medium: return 12
+        case .low: return 12
         }
     }
     

@@ -11,6 +11,7 @@ import SwiftUI
 
 struct TimeLimitView: View {
     @ObservedObject var viewModel: TimeLimitViewModel
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         ZStack {
@@ -18,11 +19,7 @@ struct TimeLimitView: View {
             
             VStack(spacing: 25) {
                 // Header
-                Text("Time Limits")
-                    .font(AppFont.main(size: 24))
-                    .foregroundColor(Color("PrimaryButtons"))
-                    .padding(.top, 20)
-                
+                Spacer()
                 VStack(spacing: 12) {
                     Text("Set your working hours based on energy")
                         .font(AppFont.main(size: 18))
@@ -80,10 +77,17 @@ struct TimeLimitView: View {
                 }
                 .padding(.bottom, 30)
             }
+        
+
         }
+        
+        // .navigatin
+        //  .navigation
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        
     }
 }
-
 // MARK: - Refined Slider Component
 struct CircularSliderComponent: View {
     @ObservedObject var viewModel: TimeLimitViewModel

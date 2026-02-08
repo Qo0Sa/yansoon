@@ -12,6 +12,7 @@ struct EnergySelectionView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @StateObject private var selectionVM = EnergySelectionViewModel()
     //@EnvironmentObject var appState: AppStateViewModel
+    @StateObject private var todoVM = ToDoViewModel()  // ✅ إنشاء الـ ViewModel
 
     @State private var shouldNavigate = false
     
@@ -77,7 +78,7 @@ struct EnergySelectionView: View {
             selectionVM.appState = appState
         }
         .navigationDestination(isPresented: $shouldNavigate) {
-            ToDoView()
+            ToDoView(viewModel: todoVM)  // ✅ تمرير الـ viewModel
                 .environmentObject(appState)
         }
             .background(Color("Background").ignoresSafeArea())

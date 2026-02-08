@@ -17,7 +17,8 @@ struct MainFlowView: View {
     @StateObject private var energySelectionVM = EnergySelectionViewModel()
     
     @State private var showToDoView = false
-    
+    @StateObject private var todoVM = ToDoViewModel()  // ✅ إنشاء الـ ViewModel
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -38,7 +39,7 @@ struct MainFlowView: View {
                         ))
                 } else {
                     // STEP 3: To Do View
-                    ToDoView()
+                    ToDoView(viewModel: todoVM)  // ✅ تمرير الـ viewModel
                         .environmentObject(appState)
                         .transition(.asymmetric(
                             insertion: .move(edge: .trailing),

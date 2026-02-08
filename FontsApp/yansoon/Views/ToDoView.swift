@@ -9,7 +9,8 @@ import SwiftUI
 
 struct ToDoView: View {
     @EnvironmentObject var appState: AppStateViewModel
-    @StateObject private var viewModel = ToDoViewModel()
+    @ObservedObject var viewModel: ToDoViewModel
+//   @StateObject private var viewModel = ToDoViewModel()
     @State private var selectedTask: TodoTask? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var showSettings = false
@@ -35,6 +36,7 @@ struct ToDoView: View {
                 
                 // Progress
                 VStack(spacing: 12) {
+                    
                     HStack {
                         Image(energyImage(for: appState.currentMode))
                             .resizable()
@@ -55,7 +57,7 @@ struct ToDoView: View {
                     GeometryReader { geometry in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.white.opacity(0.1))
+                                .fill(.backgroundProgress)
                             
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color("ProgressBar"))
@@ -64,6 +66,11 @@ struct ToDoView: View {
                     }
                     .frame(height: 12)
                 }
+                .padding(14) // مسافة داخلية للكرت
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.taskBox)
+                )
                 .padding(.horizontal, 25)
                 .padding(.top, 20)
                 .padding(.bottom, 15)
@@ -118,20 +125,20 @@ struct ToDoView: View {
             }
             
             // NavigationLink ثابت الوجهة: دائماً يرجّع View
-            NavigationLink(isActive: $navigateToTimer) {
-                Group {
-                    if let task = selectedTask {
-                        TaskTimerView(task: task)
-                            .environmentObject(appState)
-                    } else {
-                        // لو ما فيه تاسك مختار، نرجّع View فاضي لتفادي أخطاء الـ ViewBuilder
-                        EmptyView()
-                    }
-                }
-            } label: {
-                EmptyView()
-            }
-            .hidden()
+//            NavigationLink(isActive: $navigateToTimer) {
+//                Group {
+//                    if let task = selectedTask {
+//                        TaskTimerView(task: task)
+//                            .environmentObject(appState)
+//                    } else {
+//                        // لو ما فيه تاسك مختار، نرجّع View فاضي لتفادي أخطاء الـ ViewBuilder
+//                        EmptyView()
+//                    }
+//                }
+//            } label: {
+//                EmptyView()
+//            }
+//            .hidden()
         }
         .onAppear {
             viewModel.appState = appState
@@ -200,7 +207,7 @@ struct TaskRow: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.white.opacity(0.05))
+                    .fill(.taskBox)
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -211,7 +218,8 @@ struct TaskRow: View {
 struct AddTaskSheet: View {
     @ObservedObject var viewModel: ToDoViewModel
     @Environment(\.dismiss) var dismiss
-    
+    @StateObject private var timeLimitVM = TimeLimitViewModel()
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -227,37 +235,14 @@ struct AddTaskSheet: View {
                             .padding()
                             .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.05)))
                     }
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 16) {
                         Text("Estimated Time")
                             .font(AppFont.main(size: 16))
                             .foregroundColor(Color("SecondaryText"))
-                        HStack(spacing: 20) {
-                            VStack {
-                                Text("Hours")
-                                    .font(AppFont.main(size: 14))
-                                    .foregroundColor(Color("SecondaryText"))
-                                Picker("Hours", selection: $viewModel.newTaskHours) {
-                                    ForEach(0..<13) { hour in
-                                        Text("\(hour)").tag(Double(hour))
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(height: 150)
-                            }
-                            VStack {
-                                Text("Minutes")
-                                    .font(AppFont.main(size: 14))
-                                    .foregroundColor(Color("SecondaryText"))
-                                Picker("Minutes", selection: $viewModel.newTaskMinutes) {
-                                    ForEach([0.0, 15.0, 30.0, 45.0], id: \.self) { min in
-                                        Text("\(Int(min))").tag(min)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(height: 150)
-                            }
-                        }
+
+                        CircularSlidersheet(viewModel: timeLimitVM)
                     }
+                    
                     Spacer()
                     Button(action: {
                         viewModel.addTask()
@@ -272,7 +257,7 @@ struct AddTaskSheet: View {
                             .cornerRadius(12)
                     }
                     .disabled(viewModel.newTaskTitle.trimmingCharacters(in: .whitespaces).isEmpty ||
-                              (viewModel.newTaskHours == 0 && viewModel.newTaskMinutes == 0))
+                              timeLimitVM.selectedMinutes < 5)
                 }
                 .padding(25)
             }
@@ -283,6 +268,16 @@ struct AddTaskSheet: View {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(Color("PrimaryButtons"))
                 }
+            }
+            .onChange(of: timeLimitVM.selectedMinutes) { newValue in
+                // ربط السلايدر مع الـ ViewModel
+                viewModel.newTaskHours = Double(Int(newValue) / 60)
+                viewModel.newTaskMinutes = Double(Int(newValue) % 60)
+            }
+            .onAppear {
+                // تعيين القيمة الابتدائية (5 دقائق)
+                viewModel.newTaskHours = 0.0
+                viewModel.newTaskMinutes = 5.0
             }
         }
     }
@@ -305,8 +300,110 @@ private func energyImage(for level: EnergyLevel) -> String {
     }
 }
 
+
+
+struct CircularSlidersheet: View {
+    @ObservedObject var viewModel: TimeLimitViewModel
+    
+    private let sliderSize: CGFloat = 300
+    
+    private var progress: Double {
+        viewModel.selectedMinutes / (viewModel.currentLevel.maxHours * 60)
+    }
+    
+    private var hours: Int {
+        Int(viewModel.selectedMinutes) / 60
+    }
+    
+    private var minutes: Int {
+        Int(viewModel.selectedMinutes) % 60
+    }
+    
+    private func updateValue(with value: DragGesture.Value) {
+        let vector = CGVector(dx: value.location.x, dy: value.location.y)
+        let radians = atan2(vector.dy, vector.dx)
+        var angle = Double(radians * 180 / .pi) + 90
+        
+        if angle < 0 { angle += 360 }
+        
+        let totalMinutes = (angle / 360) * (viewModel.currentLevel.maxHours * 60)
+        let snapped = (totalMinutes / 5).rounded() * 5
+        // الحد الأدنى 5 دقائق
+        viewModel.selectedMinutes = min(viewModel.currentLevel.maxHours * 60, max(5, snapped))
+    }
+
+    
+    var body: some View {
+        ZStack {
+            // Background Track
+            Circle()
+                .stroke((Color("PrimaryText")).opacity(0.1), lineWidth: 10)
+                .frame(width: sliderSize, height: sliderSize)
+            
+            // Progress Bar
+            Circle()
+                .trim(from: 0, to: CGFloat(progress))
+                .stroke(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .frame(width: sliderSize, height: sliderSize)
+                .rotationEffect(.degrees(-90))
+            
+            // عرض الوقت في وسط الدائرة
+            VStack(spacing: 4) {
+                if hours > 0 {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(hours)")
+                            .font(AppFont.main(size: 60))
+                            .foregroundColor(Color("PrimaryText"))
+                        Text("h")
+                            .font(AppFont.main(size: 24))
+                            .foregroundColor(Color("SecondaryText"))
+                    }
+                }
+                
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(minutes)")
+                        .font(AppFont.main(size: hours > 0 ? 48 : 60))
+                        .foregroundColor(Color("PrimaryText"))
+                    Text("m")
+                        .font(AppFont.main(size: hours > 0 ? 20 : 24))
+                        .foregroundColor(Color("SecondaryText"))
+                }
+            }
+            
+            // Knob - Locked to the bar
+            Circle()
+                .fill(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"))
+                .frame(width: 24, height: 24)
+                .offset(y: -sliderSize / 2)
+                .rotationEffect(.degrees(progress * 360))
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            updateValue(with: value)
+                        }
+                )
+        }
+    }
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #Preview("To Do View") {
-    ToDoView()
+    ToDoView(viewModel: ToDoViewModel())
         .environmentObject({
             let appState = AppStateViewModel()
             appState.energySettings = EnergySettings(
@@ -315,18 +412,6 @@ private func energyImage(for level: EnergyLevel) -> String {
                 lowEnergyHours: 1.5
             )
             appState.currentMode = .high
-            appState.tasks = [
-                TodoTask(title: "Review project documentation",
-                         estimatedMinutes: 60,
-                         actualMinutes: 30),
-                TodoTask(title: "Respond to emails",
-                         estimatedMinutes: 30,
-                         actualMinutes: 30,
-                         isCompleted: true),
-                TodoTask(title: "Update task board",
-                         estimatedMinutes: 45,
-                         actualMinutes: 0)
-            ]
             return appState
         }())
 }

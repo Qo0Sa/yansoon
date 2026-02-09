@@ -3,7 +3,7 @@
 //  yansoon
 //
 //  Created by Rana Alngashy on 17/08/1447 AH.
-//  Updated with complete flow
+//  
 //
 
 import SwiftUI
@@ -52,6 +52,7 @@ struct MainFlowView: View {
         }
         .onAppear {
             setupViewModels()
+            requestNotificationPermissions()
         }
         .onChange(of: appState.isSetupComplete) { _, isComplete in
             if isComplete {
@@ -65,5 +66,16 @@ struct MainFlowView: View {
         // Link ViewModels to AppState
         timeLimitVM.appState = appState
         energySelectionVM.appState = appState
+    }
+    
+    private func requestNotificationPermissions() {
+        Task {
+            let granted = await appState.requestNotificationPermission()
+            if granted {
+                print("✅ Notification permissions granted")
+            } else {
+                print("⚠️ Notification permissions denied")
+            }
+        }
     }
 }

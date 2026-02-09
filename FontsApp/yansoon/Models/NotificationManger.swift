@@ -4,11 +4,18 @@
 //
 //  Created by Rana Alngashy on 21/08/1447 AH.
 //
+//
+//  NotificationManager.swift
+//  yansoon
+//
+//  Created by Assistant
+//  Manages energy check-in notifications based on selected energy level
+//
 
 import Foundation
 import UserNotifications
-import Combine
 import UIKit
+import Combine
 
 class NotificationManager: NSObject, ObservableObject {
     static let shared = NotificationManager()
@@ -54,49 +61,59 @@ class NotificationManager: NSObject, ObservableObject {
     /// - High Energy: 3 hours (180 minutes)
     /// - Medium Energy: 90 minutes
     /// - Low Energy: 60 minutes
-
     func scheduleEnergyCheckIn(for energyLevel: EnergyLevel) {
+        print("🔔 [NotificationManager] scheduleEnergyCheckIn called for: \(energyLevel.title)")
+        
+        // Cancel any existing notifications first
         cancelEnergyCheckIn()
         
-        // 🧪 TEST MODE - Change minutes to seconds
-        let intervalSeconds: Double  // Changed from intervalMinutes
+        // 🧪 TEST MODE - Using seconds instead of minutes for easy testing
+        let intervalSeconds: Double
         switch energyLevel {
         case .high:
-            intervalSeconds = 60      // 1 minute (was 180 minutes)
+            intervalSeconds = 60  // 1 minute (production: 180 minutes)
         case .medium:
-            intervalSeconds = 45      // 45 seconds (was 90 minutes)
+            intervalSeconds = 45  // 45 seconds (production: 90 minutes)
         case .low:
-            intervalSeconds = 30      // 30 seconds (was 60 minutes)
+            intervalSeconds = 30  // 30 seconds (production: 60 minutes)
         }
         
+        print("⏱️ [NotificationManager] Will fire in \(Int(intervalSeconds)) seconds")
+        
+        // Create notification content
         let content = UNMutableNotificationContent()
         content.title = "Time to Check In"
         content.body = "How's your energy level now? Let's reassess to stay balanced."
         content.sound = .default
         content.badge = 1
         
+        // Add custom data to identify this notification
         content.userInfo = [
             "type": "energyCheckIn",
             "energyLevel": energyLevel.rawValue
         ]
         
-        // Change this line - remove the * 60
+        // Create trigger (time interval in seconds)
         let trigger = UNTimeIntervalNotificationTrigger(
-            timeInterval: intervalSeconds,  // Was: intervalMinutes * 60
+            timeInterval: intervalSeconds,
             repeats: false
         )
         
+        // Create request
         let request = UNNotificationRequest(
             identifier: energyCheckInIdentifier,
             content: content,
             trigger: trigger
         )
         
+        // Schedule notification
         notificationCenter.add(request) { error in
             if let error = error {
-                print("❌ Failed to schedule notification: \(error)")
+                print("❌ [NotificationManager] Failed to schedule: \(error)")
             } else {
-                print("✅ Scheduled energy check-in notification for \(energyLevel.title) in \(Int(intervalSeconds)) SECONDS")  // Update print
+                print("✅ [NotificationManager] Successfully scheduled for \(energyLevel.title) in \(Int(intervalSeconds)) seconds")
+                // Verify it was added
+                self.printPendingNotifications()
             }
         }
     }

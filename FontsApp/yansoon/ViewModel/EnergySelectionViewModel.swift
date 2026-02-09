@@ -26,6 +26,10 @@ class EnergySelectionViewModel: ObservableObject {
         // Update the current mode in AppState
         appState.switchMode(to: level)
         
+        // Dismiss the prompt if it was shown
+        appState.dismissEnergyPrompt()
+        
         print("✅ Switched to \(level.title) mode")
+        print("⏰ Notification scheduled for energy check-in")
     }
 }

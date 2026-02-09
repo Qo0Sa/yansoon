@@ -3,7 +3,6 @@
 //  yansoon
 //
 //  Created by Rana Alngashy on 17/08/1447 AH.
-//  Updated to work with AppStateViewModel
 //
 
 import SwiftUI
@@ -51,12 +50,17 @@ struct EnergySelectionView: View {
             Spacer()
             
             // Glass/Solid Button logic
-            Button(action: {    guard let selected = selectionVM.selectedLevel else { return }
+            Button(action: {
+                guard let selected = selectionVM.selectedLevel else { return }
+                
+                print("🎯 [EnergySelection] User selected: \(selected.title)")
                 
                 // تحديث الـ currentMode في AppState
+                print("📝 [EnergySelection] Updating appState.currentMode...")
                 appState.currentMode = selected
                 
                 // التنقل إلى ToDoView
+                print("➡️ [EnergySelection] Navigating to ToDoView...")
                 shouldNavigate = true
             }) {
                 Text("Continue")

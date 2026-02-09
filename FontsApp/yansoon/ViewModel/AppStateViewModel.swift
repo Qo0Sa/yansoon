@@ -2,6 +2,11 @@
 //  AppStateViewModel.swift
 //  yansoon
 //
+//
+//
+//  AppStateViewModel.swift
+//  yansoon
+//
 //  Created by Assistant
 //
 
@@ -15,6 +20,9 @@ class AppStateViewModel: ObservableObject {
     @Published var currentMode: EnergyLevel
     @Published var tasks: [TodoTask] = []
     @Published var isSetupComplete: Bool
+    @Published var showEnergySelectionPrompt: Bool = false
+    
+    private let notificationManager = NotificationManager.shared
     
     var totalHoursForCurrentMode: Double {
         energySettings.hours(for: currentMode)
@@ -48,6 +56,7 @@ class AppStateViewModel: ObservableObject {
         self.tasks = storage.loadTasks()
         self.isSetupComplete = storage.isSetupComplete()
         setupAutoSave()
+        setupNotificationObserver()
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -93,9 +102,17 @@ class AppStateViewModel: ObservableObject {
     }
     
     func switchMode(to newMode: EnergyLevel) {
-        guard newMode != currentMode else { return }
+        guard newMode != currentMode else {
+            print("⚠️ [AppState] Attempted to switch to same mode: \(newMode.title)")
+            return
+        }
+        print("🔄 [AppState] Switching mode from \(currentMode.title) to \(newMode.title)")
         currentMode = newMode
         resetAllTaskProgress()
+        
+        // Schedule notification for energy check-in
+        print("📅 [AppState] Calling scheduleEnergyCheckIn()...")
+        scheduleEnergyCheckIn()
     }
     
     private func resetAllTaskProgress() {
@@ -103,6 +120,38 @@ class AppStateViewModel: ObservableObject {
             tasks[index].actualMinutes = 0.0
             tasks[index].isCompleted = false
         }
+    }
+    
+    // MARK: - Notification Handling
+    
+    private func setupNotificationObserver() {
+        print("👂 [AppState] Setting up notification observer")
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleEnergyCheckInNotification),
+            name: .showEnergySelection,
+            object: nil
+        )
+    }
+    
+    @objc private func handleEnergyCheckInNotification() {
+        print("🔔 [AppState] Received energy check-in notification!")
+        DispatchQueue.main.async { [weak self] in
+            self?.showEnergySelectionPrompt = true
+        }
+    }
+    
+    func scheduleEnergyCheckIn() {
+        print("📲 [AppState] scheduleEnergyCheckIn called for mode: \(currentMode.title)")
+        notificationManager.scheduleEnergyCheckIn(for: currentMode)
+    }
+    
+    func requestNotificationPermission() async -> Bool {
+        return await notificationManager.requestAuthorization()
+    }
+    
+    func dismissEnergyPrompt() {
+        showEnergySelectionPrompt = false
     }
     
     func addTask(_ task: TodoTask) {
@@ -137,5 +186,6 @@ class AppStateViewModel: ObservableObject {
         currentMode = .high
         tasks = []
         isSetupComplete = false
+        notificationManager.cancelAllNotifications()
     }
 }

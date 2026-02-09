@@ -37,6 +37,12 @@ struct TimeLimitView: View {
                 // Slider Section
                 CircularSliderComponent(viewModel: viewModel)
                 
+                Button(action: { viewModel.setDefault() }) {
+                    Text("Set by default")
+                        .font(AppFont.main(size: 18))
+                        .foregroundColor(Color("PrimaryButtons"))
+                }
+                
                 // Time Display
                 Text(viewModel.formattedTime)
                     .font(AppFont.main(size: 80))
@@ -59,11 +65,7 @@ struct TimeLimitView: View {
                             )
                             .cornerRadius(15)
                     }
-                    Button(action: { viewModel.setDefault() }) {
-                        Text("Set by Default")
-                            .font(AppFont.main(size: 18))
-                            .foregroundColor(Color("PrimaryButtons"))
-                    }
+                    //
                 }
                 .padding(.horizontal, 30)
                 

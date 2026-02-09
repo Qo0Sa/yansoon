@@ -2,15 +2,7 @@
 //  NotificationManger.swift
 //  yansoon
 //
-//  Created by Rana Alngashy on 21/08/1447 AH.
-//
-//
-//  NotificationManager.swift
-//  yansoon
-//
-//  Created by Assistant
-//  Manages energy check-in notifications based on selected energy level
-//
+
 
 import Foundation
 import UserNotifications
@@ -27,6 +19,7 @@ class NotificationManager: NSObject, ObservableObject {
     
     override init() {
         super.init()
+        // Critical: Set delegate immediately to handle taps
         notificationCenter.delegate = self
         checkAuthorizationStatus()
     }
@@ -58,36 +51,34 @@ class NotificationManager: NSObject, ObservableObject {
     // MARK: - Schedule Energy Check-In
     
     /// Schedules a notification based on the current energy level
-    /// - High Energy: 3 hours (180 minutes)
-    /// - Medium Energy: 90 minutes
-    /// - Low Energy: 60 minutes
     func scheduleEnergyCheckIn(for energyLevel: EnergyLevel) {
         print("🔔 [NotificationManager] scheduleEnergyCheckIn called for: \(energyLevel.title)")
         
-        // Cancel any existing notifications first
+        // Cancel any existing notifications first to avoid duplicates
         cancelEnergyCheckIn()
         
         // 🧪 TEST MODE - Using seconds instead of minutes for easy testing
+        // Change these values back to * 60 for minutes when releasing the app
         let intervalSeconds: Double
         switch energyLevel {
         case .high:
-            intervalSeconds = 60  // 1 minute (production: 180 minutes)
+            intervalSeconds = 10  // 10 seconds (Quick test)
         case .medium:
-            intervalSeconds = 45  // 45 seconds (production: 90 minutes)
+            intervalSeconds = 20  // 20 seconds
         case .low:
-            intervalSeconds = 30  // 30 seconds (production: 60 minutes)
+            intervalSeconds = 30  // 30 seconds
         }
         
         print("⏱️ [NotificationManager] Will fire in \(Int(intervalSeconds)) seconds")
         
         // Create notification content
         let content = UNMutableNotificationContent()
-        content.title = "Time to Check In"
-        content.body = "How's your energy level now? Let's reassess to stay balanced."
+        content.title = "Time to Check In ⚡️"
+        content.body = "How is your energy level now? Tap to reassess."
         content.sound = .default
         content.badge = 1
         
-        // Add custom data to identify this notification
+        // Add custom data to identify this notification type
         content.userInfo = [
             "type": "energyCheckIn",
             "energyLevel": energyLevel.rawValue
@@ -112,8 +103,6 @@ class NotificationManager: NSObject, ObservableObject {
                 print("❌ [NotificationManager] Failed to schedule: \(error)")
             } else {
                 print("✅ [NotificationManager] Successfully scheduled for \(energyLevel.title) in \(Int(intervalSeconds)) seconds")
-                // Verify it was added
-                self.printPendingNotifications()
             }
         }
     }
@@ -147,8 +136,7 @@ class NotificationManager: NSObject, ObservableObject {
                 print("📬 Pending notifications:")
                 for request in pending {
                     if let trigger = request.trigger as? UNTimeIntervalNotificationTrigger {
-                        let minutes = Int(trigger.timeInterval / 60)
-                        print("  - \(request.identifier): in \(minutes) minutes")
+                        print("  - \(request.identifier): fires in approx \(Int(trigger.timeInterval)) seconds")
                     }
                 }
             }
@@ -160,17 +148,17 @@ class NotificationManager: NSObject, ObservableObject {
 
 extension NotificationManager: UNUserNotificationCenterDelegate {
     
-    // Handle notification when app is in foreground
+    // Handle notification when app is in FOREGROUND (so banner still appears)
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Show notification even when app is in foreground
+        // Show banner, sound, and badge even if app is open
         completionHandler([.banner, .sound, .badge])
     }
     
-    // Handle notification tap
+    // Handle notification TAP (Click)
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -178,12 +166,17 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
         
+        // Check if this is our energy check-in notification
         if let type = userInfo["type"] as? String, type == "energyCheckIn" {
-            // Post notification to navigate to energy selection
-            NotificationCenter.default.post(
-                name: .showEnergySelection,
-                object: nil
-            )
+            print("👆 Notification Tapped! Posting .showEnergySelection event...")
+            
+            // Post notification to SwiftUI to open the Sheet
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: .showEnergySelection,
+                    object: nil
+                )
+            }
         }
         
         // Clear badge

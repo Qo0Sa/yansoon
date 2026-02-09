@@ -3,23 +3,16 @@
 //  yansoon
 //
 //  Created by Sarah
-//
-//
-//  ToDoView.swift
-//  yansoon
-//
-//  Created by Sarah
-//
+
 
 import SwiftUI
 
 struct ToDoView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @ObservedObject var viewModel: ToDoViewModel
-    //   @StateObject private var viewModel = ToDoViewModel()
+    
     @State private var selectedTask: TodoTask? = nil
     @Environment(\.dismiss) private var dismiss
-    @State private var showSettings = false
     @State private var navigateToTimer = false
     
     var body: some View {
@@ -38,8 +31,6 @@ struct ToDoView: View {
                     }
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
-                    
-                    
                     
                     // Progress
                     VStack(spacing: 12) {
@@ -73,7 +64,7 @@ struct ToDoView: View {
                         }
                         .frame(height: 12)
                     }
-                    .padding(14) // مسافة داخلية للكرت
+                    .padding(14)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
                             .fill(.taskBox)
@@ -117,7 +108,7 @@ struct ToDoView: View {
                     }
                     .frame(maxHeight: .infinity)
                     
-                    // Add
+                    // Add Button
                     Button(action: { viewModel.showAddTaskSheet = true }) {
                         Image(systemName: "plus")
                             .font(.system(size: 24, weight: .medium))
@@ -131,21 +122,19 @@ struct ToDoView: View {
                     .padding(.bottom, 30)
                 }
                 
-                // NavigationLink ثابت الوجهة: دائماً يرجّع View
-                //            NavigationLink(isActive: $navigateToTimer) {
-                //                Group {
-                //                    if let task = selectedTask {
-                //                        TaskTimerView(task: task)
-                //                            .environmentObject(appState)
-                //                    } else {
-                //                        // لو ما فيه تاسك مختار، نرجّع View فاضي لتفادي أخطاء الـ ViewBuilder
-                //                        EmptyView()
-                //                    }
-                //                }
-                //            } label: {
-                //                EmptyView()
-                //            }
-                //            .hidden()
+                // MARK: - Navigation Logic (Restored)
+                // This handles the transition to the Timer View when a task is clicked
+                NavigationLink(isActive: $navigateToTimer) {
+                    if let task = selectedTask {
+                        TaskTimerView(task: task)
+                            .environmentObject(appState)
+                    } else {
+                        EmptyView()
+                    }
+                } label: {
+                    EmptyView()
+                }
+                .hidden()
             }
             .onAppear {
                 viewModel.appState = appState
@@ -156,6 +145,7 @@ struct ToDoView: View {
             .sheet(isPresented: $viewModel.showModeSelectionSheet) {
                 ModeSelectionSheet(viewModel: viewModel, currentMode: appState.currentMode)
             }
+            // This handles the Notification Sheet
             .sheet(isPresented: $appState.showEnergySelectionPrompt) {
                 EnergyCheckInSheet()
                     .environmentObject(appState)
@@ -185,6 +175,8 @@ struct ToDoView: View {
             }
         }
     }
+    
+    // MARK: - Subviews
     
     struct TaskRow: View {
         let task: TodoTask
@@ -256,6 +248,7 @@ struct ToDoView: View {
                         
                         Spacer()
                         Button(action: {
+                            // Ensure ToDoViewModel has the logic to add task
                             viewModel.addTask()
                             dismiss()
                         }) {
@@ -281,12 +274,11 @@ struct ToDoView: View {
                     }
                 }
                 .onChange(of: timeLimitVM.selectedMinutes) { newValue in
-                    // ربط السلايدر مع الـ ViewModel
+                    // Sync local slider with ViewModel
                     viewModel.newTaskHours = Double(Int(newValue) / 60)
                     viewModel.newTaskMinutes = Double(Int(newValue) % 60)
                 }
                 .onAppear {
-                    // تعيين القيمة الابتدائية (5 دقائق)
                     viewModel.newTaskHours = 0.0
                     viewModel.newTaskMinutes = 5.0
                 }
@@ -392,8 +384,6 @@ struct ToDoView: View {
         }
     }
     
-    
-    
     struct CircularSlidersheet: View {
         @ObservedObject var viewModel: TimeLimitViewModel
         
@@ -420,10 +410,8 @@ struct ToDoView: View {
             
             let totalMinutes = (angle / 360) * (viewModel.currentLevel.maxHours * 60)
             let snapped = (totalMinutes / 5).rounded() * 5
-            // الحد الأدنى 5 دقائق
             viewModel.selectedMinutes = min(viewModel.currentLevel.maxHours * 60, max(5, snapped))
         }
-        
         
         var body: some View {
             ZStack {
@@ -440,7 +428,7 @@ struct ToDoView: View {
                     .frame(width: sliderSize, height: sliderSize)
                     .rotationEffect(.degrees(-90))
                 
-                // عرض الوقت في وسط الدائرة
+                // Time Display
                 VStack(spacing: 4) {
                     if hours > 0 {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -463,7 +451,7 @@ struct ToDoView: View {
                     }
                 }
                 
-                // Knob - Locked to the bar
+                // Knob
                 Circle()
                     .fill(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"))
                     .frame(width: 24, height: 24)
@@ -477,20 +465,19 @@ struct ToDoView: View {
                     )
             }
         }
-        
     }
 }
-    #Preview("To Do View") {
-        ToDoView(viewModel: ToDoViewModel())
-            .environmentObject({
-                let appState = AppStateViewModel()
-                appState.energySettings = EnergySettings(
-                    highEnergyHours: 4.5,
-                    mediumEnergyHours: 3.0,
-                    lowEnergyHours: 1.5
-                )
-                appState.currentMode = .high
-                return appState
-            }())
-    }
 
+#Preview("To Do View") {
+    ToDoView(viewModel: ToDoViewModel())
+        .environmentObject({
+            let appState = AppStateViewModel()
+            appState.energySettings = EnergySettings(
+                highEnergyHours: 4.5,
+                mediumEnergyHours: 3.0,
+                lowEnergyHours: 1.5
+            )
+            appState.currentMode = .high
+            return appState
+        }())
+}

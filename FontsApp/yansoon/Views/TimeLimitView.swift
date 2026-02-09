@@ -7,8 +7,8 @@
 //
 //
 
-import SwiftUI
 
+import SwiftUI
 
 struct TimeLimitView: View {
     @ObservedObject var viewModel: TimeLimitViewModel
@@ -49,7 +49,7 @@ struct TimeLimitView: View {
                 
                 VStack(spacing: 20) {
                     if viewModel.currentLevel == .low {
-                        // On the final step, navigate to Energy Selection
+                        // CRITICAL: Navigate to EnergySelectionView on the last step
                         NavigationLink(destination: EnergySelectionView().environmentObject(appState)) {
                             Text("Next")
                                 .font(AppFont.main(size: 20))
@@ -84,7 +84,7 @@ struct TimeLimitView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false)
+        .navigationBarBackButtonHidden(false) // Allow going back to previous energy levels
     }
 }
 // MARK: - Refined Slider Component

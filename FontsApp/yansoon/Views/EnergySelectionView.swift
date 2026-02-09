@@ -5,6 +5,7 @@
 //  Created by Rana Alngashy on 17/08/1447 AH.
 //
 
+
 import SwiftUI
 
 struct EnergySelectionView: View {
@@ -47,11 +48,15 @@ struct EnergySelectionView: View {
             Button(action: {
                 guard let selected = selectionVM.selectedLevel else { return }
                 
-                // 1. Update the current mode in AppState
+                // 1. Update the current mode
                 appState.currentMode = selected
                 
-                // 2. Mark setup as complete.
-                // This triggers MainFlowView to switch from setup to ToDoView.
+                // 2. IMPORTANT: Schedule the first notification immediately
+                appState.scheduleEnergyCheckIn()
+                print("⏰ Initial Notification Scheduled")
+
+                // 3. Mark setup as complete.
+                // This triggers MainFlowView to switch from Setup Flow to ToDoView
                 appState.completeSetup()
                 
             }) {
@@ -73,10 +78,9 @@ struct EnergySelectionView: View {
             selectionVM.appState = appState
         }
         .background(Color("Background").ignoresSafeArea())
-        .navigationBarBackButtonHidden(true) // Prevent going back to TimeLimit during setup
+        .navigationBarBackButtonHidden(true)
     }
 }
-
 // MARK: - EnergyButton Component
 struct EnergyButton: View {
     let level: EnergyLevel

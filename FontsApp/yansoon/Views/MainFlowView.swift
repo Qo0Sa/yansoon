@@ -3,35 +3,34 @@
 //  yansoon
 //
 //  Created by Rana Alngashy on 17/08/1447 AH.
-//  Pravo
-//
+
 import SwiftUI
 
 struct MainFlowView: View {
-    // Shared app state - single source of truth
-    @StateObject private var appState = AppStateViewModel()
+    // 1. CHANGED: Now it receives the object, it doesn't create it.
+    @EnvironmentObject var appState: AppStateViewModel
     
     // Local ViewModels
     @StateObject private var timeLimitVM = TimeLimitViewModel()
     @StateObject private var todoVM = ToDoViewModel()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                // If setup is not complete, show the setup wizard
-                if !appState.isSetupComplete {
+        ZStack {
+            if !appState.isSetupComplete {
+                NavigationStack {
                     TimeLimitView(viewModel: timeLimitVM)
                         .environmentObject(appState)
-                        .transition(.opacity)
-                } else {
-                    // If setup is complete, show the ToDo dashboard directly
+                }
+                .transition(.opacity)
+            } else {
+                NavigationStack {
                     ToDoView(viewModel: todoVM)
                         .environmentObject(appState)
-                        .transition(.opacity)
                 }
+                .transition(.opacity)
             }
-            .animation(.spring(), value: appState.isSetupComplete)
         }
+        .animation(.spring(), value: appState.isSetupComplete)
         .onAppear {
             setupViewModels()
             requestNotificationPermissions()

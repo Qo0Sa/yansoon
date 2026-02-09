@@ -124,21 +124,20 @@ struct ToDoView: View {
                 .padding(.bottom, 30)
             }
             
-            // NavigationLink ثابت الوجهة: دائماً يرجّع View
-//            NavigationLink(isActive: $navigateToTimer) {
-//                Group {
-//                    if let task = selectedTask {
-//                        TaskTimerView(task: task)
-//                            .environmentObject(appState)
-//                    } else {
-//                        // لو ما فيه تاسك مختار، نرجّع View فاضي لتفادي أخطاء الـ ViewBuilder
-//                        EmptyView()
-//                    }
-//                }
-//            } label: {
-//                EmptyView()
-//            }
-//            .hidden()
+            // NavigationLink للتايمر
+            NavigationLink(isActive: $navigateToTimer) {
+                Group {
+                    if let task = selectedTask {
+                        TaskTimerView(task: task)
+                            .environmentObject(appState)
+                    } else {
+                        EmptyView()
+                    }
+                }
+            } label: {
+                EmptyView()
+            }
+            .hidden()
         }
         .onAppear {
             viewModel.appState = appState
@@ -150,28 +149,7 @@ struct ToDoView: View {
             ModeSelectionSheet(viewModel: viewModel, currentMode: appState.currentMode)
         }
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chevron.backward")
-                        Text("Back")
-                    }
-                    .foregroundColor(Color("PrimaryButtons"))
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink {
-                    SettingsView()
-                        .environmentObject(appState)
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundColor(Color("PrimaryButtons"))
-                }
-            }
-        }
+        
     }
 }
 
@@ -233,9 +211,9 @@ struct AddTaskSheet: View {
                             .font(AppFont.main(size: 18))
                             .foregroundColor(Color("PrimaryText"))
                             .padding()
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.05)))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(.taskBox))
                     }
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 10) {
                         Text("Estimated Time")
                             .font(AppFont.main(size: 16))
                             .foregroundColor(Color("SecondaryText"))
@@ -348,27 +326,19 @@ struct CircularSlidersheet: View {
                 .frame(width: sliderSize, height: sliderSize)
                 .rotationEffect(.degrees(-90))
             
-            // عرض الوقت في وسط الدائرة
-            VStack(spacing: 4) {
-                if hours > 0 {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(hours)")
-                            .font(AppFont.main(size: 60))
-                            .foregroundColor(Color("PrimaryText"))
-                        Text("h")
-                            .font(AppFont.main(size: 24))
-                            .foregroundColor(Color("SecondaryText"))
-                    }
-                }
+            // عرض الوقت في وسط الدائرة بتنسيق 00:00
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(String(format: "%02d", hours))
+                    .font(AppFont.main(size: 60))
+                    .foregroundColor(Color("PrimaryText"))
                 
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(minutes)")
-                        .font(AppFont.main(size: hours > 0 ? 48 : 60))
-                        .foregroundColor(Color("PrimaryText"))
-                    Text("m")
-                        .font(AppFont.main(size: hours > 0 ? 20 : 24))
-                        .foregroundColor(Color("SecondaryText"))
-                }
+                Text(":")
+                    .font(AppFont.main(size: 60))
+                    .foregroundColor(Color("SecondaryText"))
+                
+                Text(String(format: "%02d", minutes))
+                    .font(AppFont.main(size: 60))
+                    .foregroundColor(Color("PrimaryText"))
             }
             
             // Knob - Locked to the bar

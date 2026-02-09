@@ -4,7 +4,7 @@
 //
 //  Created by Sarah on 17/08/1447 AH.
 //
-//كلها 
+//كلها
 import Combine
 import SwiftUI
 
@@ -14,10 +14,13 @@ struct TaskTimerView: View {
     
     @StateObject private var vm: TaskTimerViewModel
     @State private var isPulsing: Bool = false
-    
+    @State private var hasShownOverrunAlert: Bool = false
+    let task: TodoTask   // ✅ اضيفيها
+
     init(task: TodoTask, appState: AppStateViewModel? = nil) {
-        _vm = StateObject(wrappedValue: TaskTimerViewModel(task: task, appState: appState))
-    }
+         self.task = task   // ✅ اضيفيها
+         _vm = StateObject(wrappedValue: TaskTimerViewModel(task: task, appState: appState))
+     }
     
     private var allocatedText: String {
         let minutes = Int(vm.estimatedMinutes)
@@ -32,30 +35,74 @@ struct TaskTimerView: View {
         }
     }
     
-    private var formattedHourMinute: String {
-        let seconds = vm.model.remainingSeconds > 0 ? vm.model.remainingSeconds : vm.model.overrunSeconds
-        let totalMinutes = max(0, seconds / 60)
+    // الوقت المنقضي - الساعات والدقائق
+    private var formattedHoursMinutes: String {
+        let elapsedSeconds: Int
+        if vm.model.remainingSeconds > 0 {
+            let totalAllocated = Int(vm.estimatedMinutes * 60)
+            elapsedSeconds = totalAllocated - vm.model.remainingSeconds
+        } else {
+            let totalAllocated = Int(vm.estimatedMinutes * 60)
+            elapsedSeconds = totalAllocated + vm.model.overrunSeconds
+        }
+        
+        let totalMinutes = max(0, elapsedSeconds / 60)
         let hours = totalMinutes / 60
         let mins = totalMinutes % 60
-        let base = String(format: "%02d:%02d", hours, mins)
-        return vm.model.remainingSeconds > 0 ? base : "+\(base)"
+        
+        return String(format: "%02d:%02d", hours, mins)
     }
     
-    private var primaryButtonTitle: String {
-        switch vm.model.state {
-        case .idle: return "start"
-        case .running: return "pause"
-        case .paused: return "resume"
-        case .finished: return "done"
+    // الثواني فقط
+    private var formattedSeconds: String {
+        let elapsedSeconds: Int
+        if vm.model.remainingSeconds > 0 {
+            let totalAllocated = Int(vm.estimatedMinutes * 60)
+            elapsedSeconds = totalAllocated - vm.model.remainingSeconds
+        } else {
+            let totalAllocated = Int(vm.estimatedMinutes * 60)
+            elapsedSeconds = totalAllocated + vm.model.overrunSeconds
+        }
+        
+        let secs = elapsedSeconds % 60
+        return String(format: ":%02d", secs)
+    }
+    
+    // Progress من 0 إلى 1 بناءً على الوقت المنقضي
+    private var elapsedProgress: Double {
+        let totalAllocated = vm.estimatedMinutes * 60
+        let elapsedSeconds: Double
+        
+        if vm.model.remainingSeconds > 0 {
+            elapsedSeconds = totalAllocated - Double(vm.model.remainingSeconds)
+        } else {
+            elapsedSeconds = totalAllocated + Double(vm.model.overrunSeconds)
+        }
+        
+        // Progress من 0 إلى 1 (لو تجاوز 100% نخليه يكمل)
+        return min(elapsedSeconds / totalAllocated, 1.0)
+    }
+    
+    // Progress للوقت الزائد (بعد ما يخلص الوقت المخصص)
+    private var overrunProgress: Double {
+        let totalAllocated = vm.estimatedMinutes * 60
+        let elapsedSeconds: Double
+        
+        if vm.model.remainingSeconds > 0 {
+            return 0
+        } else {
+            elapsedSeconds = totalAllocated + Double(vm.model.overrunSeconds)
+            let overProgress = (elapsedSeconds - totalAllocated) / totalAllocated
+            return min(overProgress, 1.0)
         }
     }
     
-    private var primaryButtonColor: Color {
+    private var playPauseIcon: String {
         switch vm.model.state {
-        case .idle: return Color("PrimaryButtons")
-        case .running: return Color("PrimaryButtons")
-        case .paused: return Color("DoneButton")
-        case .finished: return Color("DoneButton")
+        case .idle: return "play.fill"
+        case .running: return "pause.fill"
+        case .paused: return "play.fill"
+        case .finished: return "play.fill"
         }
     }
     
@@ -71,76 +118,119 @@ struct TaskTimerView: View {
         }
     }
     
+    // حساب الوقت المنقضي بالدقائق
+    private func calculateElapsedMinutes() -> Double {
+        let elapsedSeconds: Int
+        if vm.model.remainingSeconds > 0 {
+            let totalAllocated = Int(vm.estimatedMinutes * 60)
+            elapsedSeconds = totalAllocated - vm.model.remainingSeconds
+        } else {
+            let totalAllocated = Int(vm.estimatedMinutes * 60)
+            elapsedSeconds = totalAllocated + vm.model.overrunSeconds
+        }
+        return Double(elapsedSeconds) / 60.0
+    }
+    
+    // حفظ الوقت المنقضي وإيقاف التايمر
+    private func saveAndDismiss() {
+        vm.done()
+        updatePulseIfNeeded()
+        
+        // إضافة الوقت المنقضي للـ progress
+        let elapsedMinutes = calculateElapsedMinutes()
+        if elapsedMinutes > 0 {
+            appState.addCompletedTime(taskId: task.id, minutes: elapsedMinutes)
+        }
+        
+        dismiss()
+    }
+    
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
             
             VStack(spacing: 32) {
-                // لا يوجد هيدر ولا زر رجوع هنا
-                
                 Spacer()
                 
-                // الدائرة + الوقت + allocated
+                // الدائرة نفس CircularSlidersheet
                 ZStack {
+                    // Background Track
                     Circle()
-                        .stroke(Color.white.opacity(0.08), lineWidth: 14)
-                        .frame(width: 240, height: 240)
+                        .stroke(Color("PrimaryText").opacity(0.1), lineWidth: 10)
+                        .frame(width: 300, height: 300)
                     
+                    // Progress Bar (الوقت المخصص - لون أخضر)
                     Circle()
-                        .trim(from: 0, to: CGFloat(vm.model.plannedProgress))
+                        .trim(from: 0, to: CGFloat(elapsedProgress))
                         .stroke(Color("ProgressBar"),
-                                style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                        .frame(width: 240, height: 240)
+                                style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                        .frame(width: 300, height: 300)
                         .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 0.2), value: vm.model.plannedProgress)
-                        .opacity(vm.model.plannedProgress > 0 ? 1 : 0)
-                        .scaleEffect(isPulsing ? 1.03 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: elapsedProgress)
+                        .scaleEffect(isPulsing ? 1.02 : 1.0)
                     
+                    // Overrun Progress Bar (الوقت الزائد - لون أحمر)
                     Circle()
-                        .trim(from: 0, to: CGFloat(vm.model.offLimitProgress))
+                        .trim(from: 0, to: CGFloat(overrunProgress))
                         .stroke(Color("OffLimit"),
-                                style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                        .frame(width: 240, height: 240)
+                                style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                        .frame(width: 300, height: 300)
                         .rotationEffect(.degrees(-90))
-                        .animation(.easeInOut(duration: 0.2), value: vm.model.offLimitProgress)
-                        .opacity(vm.model.offLimitProgress > 0 ? 1 : 0)
-                        .scaleEffect(isPulsing ? 1.03 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: overrunProgress)
+                        .scaleEffect(isPulsing ? 1.02 : 1.0)
                     
-                    VStack(spacing: 6) {
-                        Text(formattedHourMinute)
-                            .font(AppFont.main(size: 48))
-                            .foregroundColor(Color("PrimaryText"))
+                    // عرض الوقت في وسط الدائرة - الساعات والدقائق كبيرة والثواني صغيرة
+                    VStack(spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: 0) {
+                            Text(formattedHoursMinutes)
+                                .font(AppFont.main(size: 60))
+                                .foregroundColor(vm.model.overrunSeconds > 0 ? Color("OffLimit") : Color("PrimaryText"))
+                                .monospacedDigit()
+                            
+                            Text(formattedSeconds)
+                                .font(AppFont.main(size: 24))
+                                .foregroundColor(vm.model.overrunSeconds > 0 ? Color("OffLimit") : Color("PrimaryText"))
+                                .monospacedDigit()
+                        }
+                        
                         Text(allocatedText)
                             .font(AppFont.main(size: 14))
                             .foregroundColor(Color("SecondaryText"))
                     }
+                    
+                    // Knob - يتحرك مع التقدم
+                    Circle()
+                        .fill(vm.model.overrunSeconds > 0 ? Color("OffLimit") : Color("ProgressBar"))
+                        .frame(width: 24, height: 24)
+                        .offset(y: -150)
+                        .rotationEffect(.degrees((vm.model.overrunSeconds > 0 ? overrunProgress : elapsedProgress) * 360))
                 }
                 
                 // الأزرار
                 HStack(spacing: 16) {
+                    // زر Done الكبير
                     Button {
-                        vm.primaryButtonTapped()
-                        updatePulseIfNeeded()
+                        saveAndDismiss()
                     } label: {
-                        Text(primaryButtonTitle)
+                        Text("Done")
                             .font(AppFont.main(size: 18))
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(primaryButtonColor)
+                            .background(Color("DoneButton"))
                             .cornerRadius(15)
                     }
                     
+                    // زر Start/Pause الصغير (أيقون فقط)
                     Button {
-                        vm.done()
+                        vm.primaryButtonTapped()
                         updatePulseIfNeeded()
-                        dismiss()
                     } label: {
-                        Image(systemName: "checkmark")
+                        Image(systemName: playPauseIcon)
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.black)
                             .frame(width: 56, height: 56)
-                            .background(Color("DoneButton"))
+                            .background(Color("PrimaryButtons"))
                             .cornerRadius(12)
                     }
                 }
@@ -158,11 +248,29 @@ struct TaskTimerView: View {
         .onChange(of: vm.model.state) { _, _ in
             updatePulseIfNeeded()
         }
+        .onChange(of: vm.model.overrunSeconds) { oldValue, newValue in
+            // عند أول ثانية من تجاوز الوقت، نعطي تنبيه
+            if oldValue == 0 && newValue > 0 && !hasShownOverrunAlert {
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.warning)
+                hasShownOverrunAlert = true
+            }
+        }
         // إخفاء عناصر شريط التنقل الافتراضي
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .principal) { EmptyView() }
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    saveAndDismiss()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.backward")
+                        Text("Back")
+                    }
+                    .foregroundColor(Color("PrimaryButtons"))
+                }
+            }
         }
     }
 }

@@ -84,6 +84,22 @@ class AppStateViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
+    
+    func addCompletedTime(taskId: UUID, minutes: Double) {
+        guard minutes > 0 else { return }
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+
+        tasks[index].actualMinutes += minutes
+
+        // اختياري: لو تبين تعلمين التاسك Completed لما يوصل/يتجاوز الوقت المتوقع
+        if tasks[index].estimatedMinutes > 0,
+           tasks[index].actualMinutes >= tasks[index].estimatedMinutes {
+            tasks[index].isCompleted = true
+        }
+    }
+    
+    
+    
     func updateHours(_ hours: Double, for level: EnergyLevel) {
         energySettings.setHours(hours, for: level)
     }
@@ -138,4 +154,7 @@ class AppStateViewModel: ObservableObject {
         tasks = []
         isSetupComplete = false
     }
+    
+    
+    
 }

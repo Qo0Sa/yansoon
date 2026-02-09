@@ -10,9 +10,7 @@ import SwiftUI
 struct yansoonApp: App {
     var body: some Scene {
         WindowGroup {
-            // MainFlowView handles the logic for switching between
-            // TimeLimitView and EnergySelectionView
-            MainFlowView()
+            SplashView()
         }
     }
 }

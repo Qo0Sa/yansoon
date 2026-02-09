@@ -3,6 +3,13 @@
 //  yansoon
 //
 //  Created by Sarah
+//
+//
+//  ToDoView.swift
+//  yansoon
+//
+//  Created by Sarah
+//
 
 import SwiftUI
 
@@ -31,6 +38,8 @@ struct ToDoView: View {
                     }
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
+                    
+                    
                     
                     // Progress
                     VStack(spacing: 12) {
@@ -471,17 +480,17 @@ struct ToDoView: View {
         
     }
 }
+    #Preview("To Do View") {
+        ToDoView(viewModel: ToDoViewModel())
+            .environmentObject({
+                let appState = AppStateViewModel()
+                appState.energySettings = EnergySettings(
+                    highEnergyHours: 4.5,
+                    mediumEnergyHours: 3.0,
+                    lowEnergyHours: 1.5
+                )
+                appState.currentMode = .high
+                return appState
+            }())
+    }
 
-#Preview("To Do View") {
-    ToDoView(viewModel: ToDoViewModel())
-        .environmentObject({
-            let appState = AppStateViewModel()
-            appState.energySettings = EnergySettings(
-                highEnergyHours: 4.5,
-                mediumEnergyHours: 3.0,
-                lowEnergyHours: 1.5
-            )
-            appState.currentMode = .high
-            return appState
-        }())
-}

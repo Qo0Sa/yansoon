@@ -9,32 +9,30 @@
 
 import SwiftUI
 
+
 struct TimeLimitView: View {
     @ObservedObject var viewModel: TimeLimitViewModel
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var appState: AppStateViewModel
     
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
             
             VStack(spacing: 25) {
-                // Header
                 Spacer()
                 VStack(spacing: 12) {
                     Text("Set your working hours based on energy")
                         .font(AppFont.main(size: 18))
-                        .foregroundColor(Color("PrimaryText"))
-                    
                     Text(viewModel.currentLevel.title)
                         .font(AppFont.main(size: 18))
-                        .foregroundColor((Color("PrimaryText")).opacity(0.7))
+                        .opacity(0.7)
                 }
+                .foregroundColor(Color("PrimaryText"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
                 
                 Spacer()
                 
-                // Slider Section
                 CircularSliderComponent(viewModel: viewModel)
                 
                 Button(action: { viewModel.setDefault() }) {
@@ -43,33 +41,38 @@ struct TimeLimitView: View {
                         .foregroundColor(Color("PrimaryButtons"))
                 }
                 
-                // Time Display
                 Text(viewModel.formattedTime)
                     .font(AppFont.main(size: 80))
                     .foregroundColor(Color("PrimaryText"))
                 
                 Spacer()
                 
-                // Buttons Section
                 VStack(spacing: 20) {
-                    Button(action: { viewModel.nextLevel() }) {
-                        Text(viewModel.currentLevel == .low ? "Done" : "Next")
-                            .font(AppFont.main(size: 20))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(
-                                Color("PrimaryButtons")
-                                    .opacity(0.9)
-                                    .blur(radius: 0.5)
-                            )
-                            .cornerRadius(15)
+                    if viewModel.currentLevel == .low {
+                        // On the final step, navigate to Energy Selection
+                        NavigationLink(destination: EnergySelectionView().environmentObject(appState)) {
+                            Text("Next")
+                                .font(AppFont.main(size: 20))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color("PrimaryButtons"))
+                                .cornerRadius(15)
+                        }
+                    } else {
+                        Button(action: { viewModel.nextLevel() }) {
+                            Text("Next")
+                                .font(AppFont.main(size: 20))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color("PrimaryButtons"))
+                                .cornerRadius(15)
+                        }
                     }
-                    //
                 }
                 .padding(.horizontal, 30)
                 
-                // Pagination Dots
                 HStack(spacing: 10) {
                     ForEach(0..<3) { index in
                         Circle()
@@ -79,15 +82,9 @@ struct TimeLimitView: View {
                 }
                 .padding(.bottom, 30)
             }
-        
-
         }
-        
-        // .navigatin
-        //  .navigation
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
-        
     }
 }
 // MARK: - Refined Slider Component

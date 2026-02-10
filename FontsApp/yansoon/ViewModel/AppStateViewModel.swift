@@ -1,37 +1,50 @@
 //
 //  AppStateViewModel.swift
 //  yansoon
-
 //
+
 import Foundation
 import SwiftUI
 import Combine
 
-class AppStateViewModel: ObservableObject {
+final class AppStateViewModel: ObservableObject {
 
     @Published var energySettings: EnergySettings
     @Published var currentMode: EnergyLevel
-    @Published var tasks: [TodoTask] = []
+    @Published var tasks: [TodoTask]
     @Published var isSetupComplete: Bool
 
-    // The variable that triggers the sheet
+    // Triggers Energy Check-In Sheet
     @Published var showEnergySelectionPrompt: Bool = false
 
     private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - Computed
     var totalHoursForCurrentMode: Double { energySettings.hours(for: currentMode) }
-    var totalWorkedMinutes: Double { tasks.reduce(0) { $0 + $1.actualMinutes } }
-    var totalWorkedHours: Double { totalWorkedMinutes / 60.0 }
+
+    var totalWorkedMinutes: Double {
+        tasks.reduce(0) { $0 + $1.actualMinutes }
+    }
+
+    var totalWorkedHours: Double {
+        totalWorkedMinutes / 60.0
+    }
 
     var progress: Double {
         guard totalHoursForCurrentMode > 0 else { return 0 }
         return min(totalWorkedHours / totalHoursForCurrentMode, 1.0)
     }
 
-    var remainingHours: Double { max(0, totalHoursForCurrentMode - totalWorkedHours) }
-    var progressText: String { String(format: "%.1f / %.1f hrs", totalWorkedHours, totalHoursForCurrentMode) }
+    var remainingHours: Double {
+        max(0, totalHoursForCurrentMode - totalWorkedHours)
+    }
 
+    var progressText: String {
+        String(format: "%.1f / %.1f hrs", totalWorkedHours, totalHoursForCurrentMode)
+    }
+
+    // MARK: - Init
     init() {
         let storage = StorageManager.shared
         self.energySettings = storage.loadEnergySettings()
@@ -43,7 +56,11 @@ class AppStateViewModel: ObservableObject {
         setupNotificationObserver()
     }
 
-    // 1) Listen for NotificationManager signal
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - Notification Observer
     private func setupNotificationObserver() {
         NotificationCenter.default.addObserver(
             self,
@@ -53,7 +70,6 @@ class AppStateViewModel: ObservableObject {
         )
     }
 
-    // 2) Called when notification fires
     @objc private func handleEnergyCheckInNotification() {
         print("⚡️ [AppState] Notification signal received! Opening sheet...")
         DispatchQueue.main.async { [weak self] in
@@ -61,6 +77,7 @@ class AppStateViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Auto Save
     private func setupAutoSave() {
         $energySettings
             .dropFirst()
@@ -85,24 +102,13 @@ class AppStateViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func addCompletedTime(taskId: UUID, minutes: Double) {
-        guard minutes > 0 else { return }
-        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
-
-        tasks[index].actualMinutes += minutes
-
-        if tasks[index].estimatedMinutes > 0,
-           tasks[index].actualMinutes >= tasks[index].estimatedMinutes {
-            tasks[index].isCompleted = true
-        }
+    // MARK: - Setup / Mode
+    func completeSetup() {
+        isSetupComplete = true
     }
 
     func updateHours(_ hours: Double, for level: EnergyLevel) {
         energySettings.setHours(hours, for: level)
-    }
-
-    func completeSetup() {
-        isSetupComplete = true
     }
 
     func switchMode(to newMode: EnergyLevel) {
@@ -119,18 +125,20 @@ class AppStateViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Notifications
     func scheduleEnergyCheckIn() {
         notificationManager.scheduleEnergyCheckIn(for: currentMode)
     }
 
     func requestNotificationPermission() async -> Bool {
-        return await notificationManager.requestAuthorization()
+        await notificationManager.requestAuthorization()
     }
 
     func dismissEnergyPrompt() {
         showEnergySelectionPrompt = false
     }
 
+    // MARK: - Tasks
     func addTask(_ task: TodoTask) {
         tasks.append(task)
     }
@@ -157,6 +165,19 @@ class AppStateViewModel: ObservableObject {
         }
     }
 
+    func addCompletedTime(taskId: UUID, minutes: Double) {
+        guard minutes > 0 else { return }
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+
+        tasks[index].actualMinutes += minutes
+
+        if tasks[index].estimatedMinutes > 0,
+           tasks[index].actualMinutes >= tasks[index].estimatedMinutes {
+            tasks[index].isCompleted = true
+        }
+    }
+
+    // MARK: - Reset
     func resetApp() {
         StorageManager.shared.clearAll()
         energySettings = .default

@@ -3,67 +3,48 @@
 //  yansoon
 //
 //  Created by Rana Alngashy on 17/08/1447 AH.
-//  Updated with complete flow
-//
 
 import SwiftUI
 
 struct MainFlowView: View {
-    // Shared app state - single source of truth
-    @StateObject private var appState = AppStateViewModel()
+    // 1. CHANGED: Now it receives the object, it doesn't create it.
+    @EnvironmentObject var appState: AppStateViewModel
     
     // Local ViewModels
     @StateObject private var timeLimitVM = TimeLimitViewModel()
-    @StateObject private var energySelectionVM = EnergySelectionViewModel()
-    
-    @State private var showToDoView = false
-    @StateObject private var todoVM = ToDoViewModel()  // ✅ إنشاء الـ ViewModel
+    @StateObject private var todoVM = ToDoViewModel()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if !appState.isSetupComplete {
-                    // STEP 1: Time Limit Setup
+        ZStack {
+            if !appState.isSetupComplete {
+                NavigationStack {
                     TimeLimitView(viewModel: timeLimitVM)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
-                        ))
-                } else if !showToDoView {
-                    // STEP 2: Energy Selection
-                    EnergySelectionView()
                         .environmentObject(appState)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
-                        ))
-                } else {
-                    // STEP 3: To Do View
-                    ToDoView(viewModel: todoVM)  // ✅ تمرير الـ viewModel
-                        .environmentObject(appState)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
-                        ))
                 }
+                .transition(.opacity)
+            } else {
+                NavigationStack {
+                    ToDoView(viewModel: todoVM)
+                        .environmentObject(appState)
+                }
+                .transition(.opacity)
             }
-            .animation(.spring(), value: appState.isSetupComplete)
-            .animation(.spring(), value: showToDoView)
         }
+        .animation(.spring(), value: appState.isSetupComplete)
         .onAppear {
             setupViewModels()
-        }
-        .onChange(of: appState.isSetupComplete) { _, isComplete in
-            if isComplete {
-                // When setup is complete, show energy selection
-                showToDoView = false
-            }
+            requestNotificationPermissions()
         }
     }
     
     private func setupViewModels() {
-        // Link ViewModels to AppState
         timeLimitVM.appState = appState
-        energySelectionVM.appState = appState
+        todoVM.appState = appState
+    }
+    
+    private func requestNotificationPermissions() {
+        Task {
+            let _ = await appState.requestNotificationPermission()
+        }
     }
 }

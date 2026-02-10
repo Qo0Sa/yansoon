@@ -1,3 +1,5 @@
+
+
 //
 //  ToDoView.swift
 //  yansoon
@@ -193,6 +195,9 @@ struct TaskRow: View {
     }
 }
 
+
+
+//شايف التايمر الي بالبروقرسس ابيه 00:00 يكون وعلى حسب المود نفس الي قبل و
 struct AddTaskSheet: View {
     @ObservedObject var viewModel: ToDoViewModel
     @Environment(\.dismiss) var dismiss
@@ -270,6 +275,86 @@ struct ModeSelectionSheet: View {
     }
 }
 
+// MARK: - Energy Check-In Sheet
+    struct EnergyCheckInSheet: View {
+        @EnvironmentObject var appState: AppStateViewModel
+        @StateObject private var selectionVM = EnergySelectionViewModel()
+        @Environment(\.dismiss) private var dismiss
+        
+        var body: some View {
+            NavigationView {
+                ZStack {
+                    Color("Background").ignoresSafeArea()
+                    
+                    VStack(spacing: 0) {
+                        VStack(spacing: 12) {
+                            Text("Time to Check In!")
+                                .font(AppFont.main(size: 24))
+                            Text("How are you feeling right now?")
+                                .font(AppFont.main(size: 16))
+                                .opacity(0.7)
+                        }
+                        .foregroundColor(Color("PrimaryText"))
+                        .padding(.top, 30)
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 35) {
+                            EnergyButton(level: .high,
+                                         sub: "Feeling great and ready to focus",
+                                         img: "yansoonStatus/high",
+                                         selected: $selectionVM.selectedLevel)
+                            
+                            EnergyButton(level: .medium,
+                                         sub: "Steady but not at full capacity",
+                                         img: "yansoonStatus/medium",
+                                         selected: $selectionVM.selectedLevel)
+                            
+                            EnergyButton(level: .low,
+                                         sub: "Tired and needing gentleness",
+                                         img: "yansoonStatus/low",
+                                         selected: $selectionVM.selectedLevel)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            guard let selected = selectionVM.selectedLevel else { return }
+                            appState.switchMode(to: selected)
+                            appState.dismissEnergyPrompt()
+                            dismiss()
+                        }) {
+                            Text("Continue")
+                                .font(AppFont.main(size: 20))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 18)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .fill(selectionVM.selectedLevel != nil ? Color("PrimaryButtons") : Color.gray.opacity(0.3))
+                                )
+                        }
+                        .disabled(selectionVM.selectedLevel == nil)
+                        .padding(.horizontal, 30)
+                        .padding(.bottom, 40)
+                    }
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Later") {
+                            appState.dismissEnergyPrompt()
+                            dismiss()
+                        }
+                        .foregroundColor(Color("PrimaryButtons"))
+                    }
+                }
+            }
+            .onAppear {
+                selectionVM.appState = appState
+            }
+        }
+    }
 private func energyImage(for level: EnergyLevel) -> String {
     switch level {
     case .high: return "yansoonStatus/high"

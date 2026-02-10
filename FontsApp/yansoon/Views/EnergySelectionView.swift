@@ -3,18 +3,14 @@
 //  yansoon
 //
 //  Created by Rana Alngashy on 17/08/1447 AH.
-//  Updated to work with AppStateViewModel
 //
+
 
 import SwiftUI
 
 struct EnergySelectionView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @StateObject private var selectionVM = EnergySelectionViewModel()
-    //@EnvironmentObject var appState: AppStateViewModel
-    @StateObject private var todoVM = ToDoViewModel()  // ✅ إنشاء الـ ViewModel
-
-    @State private var shouldNavigate = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -30,7 +26,6 @@ struct EnergySelectionView: View {
             
             Spacer()
             
-            // Updated: Using the correct asset names from your yansoonStauts folder
             VStack(spacing: 35) {
                 EnergyButton(level: .high,
                              sub: "Feeling great and ready to focus",
@@ -50,42 +45,42 @@ struct EnergySelectionView: View {
             
             Spacer()
             
-            // Glass/Solid Button logic
-            Button(action: {    guard let selected = selectionVM.selectedLevel else { return }
+            Button(action: {
+                guard let selected = selectionVM.selectedLevel else { return }
                 
-                // تحديث الـ currentMode في AppState
+                // 1. Update the current mode
                 appState.currentMode = selected
                 
-                // التنقل إلى ToDoView
-                shouldNavigate = true
+                // 2. IMPORTANT: Schedule the first notification immediately
+                appState.scheduleEnergyCheckIn()
+                print("⏰ Initial Notification Scheduled")
+
+                // 3. Mark setup as complete.
+                // This triggers MainFlowView to switch from Setup Flow to ToDoView
+                appState.completeSetup()
+                
             }) {
                 Text("Continue")
-                                 .font(AppFont.main(size: 20))
-                                  .foregroundColor(.black)
-                                  .frame(maxWidth: .infinity)
-                                  .padding(.vertical, 18)
-                                  .background(
-                                      RoundedRectangle(cornerRadius: 15)
-                                          .fill(selectionVM.selectedLevel != nil ? Color("PrimaryButtons") : Color.gray.opacity(0.3))
-                                )
+                    .font(AppFont.main(size: 20))
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 15)
+                            .fill(selectionVM.selectedLevel != nil ? Color("PrimaryButtons") : Color.gray.opacity(0.3))
+                    )
             }
+            .disabled(selectionVM.selectedLevel == nil)
         }
-      //  .disabled(selectionVM.selectedLevel == nil)
-                  .padding(.horizontal, 30)
-                .padding(.bottom, 40)
-      
+        .padding(.horizontal, 30)
+        .padding(.bottom, 40)
         .onAppear {
             selectionVM.appState = appState
         }
-        .navigationDestination(isPresented: $shouldNavigate) {
-            ToDoView(viewModel: todoVM)  // ✅ تمرير الـ viewModel
-                .environmentObject(appState)
-        }
-            .background(Color("Background").ignoresSafeArea())
-
+        .background(Color("Background").ignoresSafeArea())
+        .navigationBarBackButtonHidden(true)
     }
 }
-
 // MARK: - EnergyButton Component
 struct EnergyButton: View {
     let level: EnergyLevel
@@ -94,7 +89,6 @@ struct EnergyButton: View {
     @Binding var selected: EnergyLevel?
     
     var body: some View {
-        // Clicking anywhere in this Button (image or text) will select the level
         Button(action: {
             withAnimation(.spring()) {
                 selected = level
@@ -105,9 +99,7 @@ struct EnergyButton: View {
                     .resizable()
                     .scaledToFit()
                     .frame(height: 100)
-                    // Visual feedback: Unselected icons become slightly transparent
                     .opacity(selected == level || selected == nil ? 1 : 0.4)
-                    // Visual feedback: Selected icon gets slightly larger
                     .scaleEffect(selected == level ? 1.1 : 1.0)
                 
                 Text(level.title)
@@ -119,16 +111,9 @@ struct EnergyButton: View {
                     .foregroundColor(Color("PrimaryText").opacity(0.5))
             }
         }
-        .buttonStyle(PlainButtonStyle()) // Prevents default grey highlight on tap
+        .buttonStyle(PlainButtonStyle())
     }
 }
-
-//#Preview {
-//    EnergySelectionView()
-//        .preferredColorScheme(.dark)
-//
-//}
-
 
 #Preview {
     EnergySelectionView()

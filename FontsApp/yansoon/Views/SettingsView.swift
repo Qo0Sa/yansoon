@@ -12,20 +12,21 @@ struct SettingsView: View {
     @StateObject private var vm = SettingsViewModel()
     @Environment(\.dismiss) private var dismiss
     
+    @State private var notificationsEnabled: Bool = true
+    @State private var selectedLanguage: String = "English"
+    
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Header (بدون سهم رجوع)
+                    // Header
                     HStack {
-                        // إزالة زر السهم
                         Text("Settings")
                             .font(AppFont.main(size: 24))
                             .foregroundColor(Color("PrimaryText"))
                         Spacer()
-                        Color.clear.frame(width: 24, height: 24)
                     }
                     .padding(.top, 8)
                     
@@ -87,21 +88,96 @@ struct SettingsView: View {
                     .padding(16)
                     .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.05)))
                     
-                    // Appearance Preferences
+                    // App Preferences Section
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Appearance Preferences")
+                        Text("App Preferences")
                             .font(AppFont.main(size: 18))
                             .foregroundColor(Color("PrimaryText"))
                         
-                        Picker("", selection: Binding(
-                            get: { vm.appearanceMode },
-                            set: { vm.appearanceMode = $0 }
-                        )) {
-                            ForEach(AppearanceMode.allCases) { mode in
-                                Text(mode.title).tag(mode)
+                        VStack(spacing: 24) {
+                            // Appearance
+                            HStack {
+                                Text("Appearance")
+                                    .font(AppFont.main(size: 16))
+                                    .foregroundColor(Color("PrimaryText"))
+                                Spacer()
+                                
+                                // Dark/Light Toggle
+                                HStack(spacing: 0) {
+                                    Button(action: {
+                                        vm.appearanceMode = .dark
+                                    }) {
+                                        Image(systemName: "moon.fill")
+                                            .foregroundColor(vm.appearanceMode == .dark ? Color("Background") : Color("PrimaryText"))
+                                            .frame(width: 40, height: 32)
+                                            .background(vm.appearanceMode == .dark ? Color("PrimaryText") : Color.clear)
+                                            .cornerRadius(8)
+                                    }
+                                    
+                                    Button(action: {
+                                        vm.appearanceMode = .light
+                                    }) {
+                                        Image(systemName: "sun.max.fill")
+                                            .foregroundColor(vm.appearanceMode == .light ? Color("Background") : Color("PrimaryText"))
+                                            .frame(width: 40, height: 32)
+                                            .background(vm.appearanceMode == .light ? Color("PrimaryText") : Color.clear)
+                                            .cornerRadius(8)
+                                    }
+                                }
+                                .background(Capsule().stroke(Color("PrimaryText").opacity(0.3), lineWidth: 1))
+                                .clipShape(Capsule())
+                            }
+                            
+                            // Notifications
+                            HStack {
+                                Text("Notifications")
+                                    .font(AppFont.main(size: 16))
+                                    .foregroundColor(Color("PrimaryText"))
+                                Spacer()
+                                
+                                Toggle("", isOn: $notificationsEnabled)
+                                    .labelsHidden()
+                                    .tint(Color("PrimaryButtons"))
+                            }
+                            
+                            // Language
+                            HStack {
+                                Text("Language")
+                                    .font(AppFont.main(size: 16))
+                                    .foregroundColor(Color("PrimaryText"))
+                                Spacer()
+                                
+                                // English/Arabic Toggle
+                                HStack(spacing: 0) {
+                                    Button(action: {
+                                        selectedLanguage = "English"
+                                    }) {
+                                        Text("English")
+                                            .font(AppFont.main(size: 14))
+                                            .foregroundColor(selectedLanguage == "English" ? Color("Background") : Color("PrimaryText"))
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(selectedLanguage == "English" ? Color("PrimaryText") : Color.clear)
+                                            .cornerRadius(8)
+                                    }
+                                    
+                                    Button(action: {
+                                        selectedLanguage = "Arabic"
+                                    }) {
+                                        Text("Arabic")
+                                            .font(AppFont.main(size: 14))
+                                            .foregroundColor(selectedLanguage == "Arabic" ? Color("Background") : Color("PrimaryText"))
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 8)
+                                            .background(selectedLanguage == "Arabic" ? Color("PrimaryText") : Color.clear)
+                                            .cornerRadius(8)
+                                    }
+                                }
+                                .background(Capsule().stroke(Color("PrimaryText").opacity(0.3), lineWidth: 1))
+                                .clipShape(Capsule())
                             }
                         }
-                        .pickerStyle(.segmented)
+                        .padding(.horizontal, 12)
                     }
                     .padding(16)
                     .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.05)))

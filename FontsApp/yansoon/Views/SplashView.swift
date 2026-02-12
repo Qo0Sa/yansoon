@@ -4,29 +4,26 @@
 //
 //  Created by Noor Alhassani on 16/08/1447 AH.
 
-
 import SwiftUI
 
 struct SplashView: View {
-    // 1. Receive the AppState
-    @EnvironmentObject var appState: AppStateViewModel
-    
     let durationSeconds: Double
-    
-    @State private var isActive = false
+    let onFinish: () -> Void
+
     @State private var logoScale: CGFloat = 0.85
     @State private var logoOpacity: Double = 0.0
     @State private var rotation: Angle = .degrees(0)
     @State private var pulse = false
-    
-    init(durationSeconds: Double = 2.0) {
+
+    init(durationSeconds: Double = 2.0, onFinish: @escaping () -> Void) {
         self.durationSeconds = durationSeconds
+        self.onFinish = onFinish
     }
-    
+
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
-            
+
             Image("yansoonStatus/low")
                 .resizable()
                 .scaledToFit()
@@ -45,24 +42,12 @@ struct SplashView: View {
                     withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
                         pulse = true
                     }
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + durationSeconds) {
+                        onFinish()
+                    }
                 }
         }
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + durationSeconds) {
-                isActive = true
-            }
-        }
-        .fullScreenCover(isPresented: $isActive) {
-            // 2. Pass AppState to the MainFlowView
-            MainFlowView()
-                .environmentObject(appState)
-        }
     }
 }
-#Preview("Splash only (60s)") {
-    // برفيو لمدة دقيقة (60 ثانية) لعرض التأثيرات على الشعار فقط
-    NavigationStack {
-        SplashView(durationSeconds: 60.0)
-    }
-    .preferredColorScheme(.dark)
-}
+

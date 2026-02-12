@@ -29,7 +29,17 @@ struct ToDoView: View {
                         Text("Add Your To Do")
                             .font(AppFont.main(size: 24))
                             .foregroundColor(Color("PrimaryText"))
+
                         Spacer()
+
+                        NavigationLink {
+                            SettingsView()
+                                .environmentObject(appState)
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .foregroundColor(Color("PrimaryButtons"))
+                                .font(.system(size: 25, weight: .semibold))
+                        }
                     }
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
@@ -124,6 +134,9 @@ struct ToDoView: View {
                 }
             }
 
+            
+            
+            
             // Navigation (مرة وحدة فقط + بدون تداخل)
             NavigationLink(isActive: $navigateToTimer) {
                 if let task = selectedTask {
@@ -153,27 +166,9 @@ struct ToDoView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button {
-                    dismiss()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chevron.backward")
-                        Text("Back")
-                    }
-                    .foregroundColor(Color("PrimaryButtons"))
-                }
-            }
+          
 
-            ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink {
-                    SettingsView()
-                        .environmentObject(appState)
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundColor(Color("PrimaryButtons"))
-                }
-            }
+         
         }
     }
 }

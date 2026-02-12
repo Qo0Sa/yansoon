@@ -243,8 +243,17 @@ struct TaskTimerView: View {
             if vm.appState == nil {
                 vm.appState = appState
             }
+            vm.syncNow()   // ⭐ يخلي الوقت يتحدث إذا رجعتي للتطبيق
             updatePulseIfNeeded()
         }
+        
+        .navigationTitle("Timer")
+        .navigationBarTitleDisplayMode(.inline)
+
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            vm.syncNow()   // ⭐ إذا رجع التطبيق من الخلفية
+        }
+
         .onChange(of: vm.model.state) { _, _ in
             updatePulseIfNeeded()
         }
@@ -266,7 +275,7 @@ struct TaskTimerView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "chevron.backward")
-                        Text("Back")
+                       
                     }
                     .foregroundColor(Color("PrimaryButtons"))
                 }

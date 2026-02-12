@@ -7,18 +7,22 @@ import SwiftUI
 
 @main
 struct yansoonApp: App {
-    // 1. Initialize the NotificationManager
-    private let notificationManager = NotificationManager.shared
-    
-    // 2. Create AppState HERE (Lifted State)
-    // This ensures it exists before any view loads
     @StateObject private var appState = AppStateViewModel()
-    
+    @State private var showSplash = true
+
     var body: some Scene {
         WindowGroup {
-            SplashView()
-                // 3. Pass it down to the Splash Screen
+            if showSplash {
+                SplashView(durationSeconds: 2.0) {
+                    withAnimation {
+                        showSplash = false
+                    }
+                }
                 .environmentObject(appState)
+            } else {
+                MainFlowView()
+                    .environmentObject(appState)
+            }
         }
     }
 }

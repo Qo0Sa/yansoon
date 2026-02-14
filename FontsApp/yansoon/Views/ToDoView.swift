@@ -180,17 +180,17 @@ struct TaskRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                if task.isTimerRunning {
+                 if task.isCompleted {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Color("PrimaryButtons"))
                         .frame(width: 20, height: 20)
                         .transition(.scale)
                 } else {
-                    Circle()
-                        .fill(Color("PrimaryButtons"))
-                        .frame(width: 8, height: 8)
+                        Image(systemName: "circle")
+                        .foregroundColor(Color("PrimaryButtons"))
+                        .font(.system(size: 19))
                         .transition(.scale)
-                }
+                        }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(task.title)

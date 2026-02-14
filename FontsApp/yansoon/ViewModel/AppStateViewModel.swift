@@ -41,8 +41,14 @@ final class AppStateViewModel: ObservableObject {
     }
 
     var progressText: String {
-        String(format: "%.1f / %.1f hrs", totalWorkedHours, totalHoursForCurrentMode)
-    }
+        let workedH = Int(totalWorkedHours)
+        let workedM = Int((totalWorkedHours - Double(workedH)) * 60)
+        
+        let totalH = Int(totalHoursForCurrentMode)
+        let totalM = Int((totalHoursForCurrentMode - Double(totalH)) * 60)
+        
+        return "\(workedH)h \(workedM)m / \(totalH)h \(totalM)m"
+        }
 
     // MARK: - Init
     init() {
@@ -187,3 +193,4 @@ final class AppStateViewModel: ObservableObject {
         notificationManager.cancelAllNotifications()
     }
 }
+    

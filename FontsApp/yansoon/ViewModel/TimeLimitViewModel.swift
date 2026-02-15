@@ -10,63 +10,50 @@ import SwiftUI
 import Foundation
 import Combine
 
-@MainActor
-final class TimeLimitViewModel: ObservableObject {
+class TimeLimitViewModel: ObservableObject {
     @Published var currentLevel: EnergyLevel = .high
     @Published var selectedMinutes: Double = 0.0
-
+    
+    // Reference to shared app state
     weak var appState: AppStateViewModel?
-
+    
     var formattedTime: String {
         let hours = Int(selectedMinutes) / 60
         let mins = Int(selectedMinutes) % 60
         return String(format: "%02d:%02d", hours, mins)
     }
-
+    
     var isOverAverage: Bool {
-        // إذا averageHours عندك داخل EnergyLevel
         return (selectedMinutes / 60) > currentLevel.averageHours
     }
-
-    // ✅ أهم إضافة: نهيئ السلايدر من إعدادات اليوزر
-    func syncFromAppState() {
-        // ✅ في شاشة الإعدادات نبي يبدأ صفر
-        selectedMinutes = 0.0
-    }
-
-    func setLevelToUserMode() {
-        guard let appState else { return }
-        currentLevel = appState.currentMode
-        selectedMinutes = 0.0   // ✅ يبدأ صفر
-    }
-
-
+    
     func setDefault() {
-        // default على متوسط المستوى (إذا هذا اللي تبينه)
         selectedMinutes = currentLevel.averageHours * 60
-
-        selectedMinutes = (selectedMinutes / 5).rounded() * 5
     }
-
+    // Add this inside TimeLimitViewModel class
+    func previousLevel() {
+        if let previous = EnergyLevel(rawValue: currentLevel.rawValue - 1) {
+            currentLevel = previous
+            // Optionally reload the hours previously set in appState
+            if let appState = appState {
+                selectedMinutes = appState.energySettings.hours(for: previous) * 60
+            }
+        }
+    }
     func nextLevel() {
-        if let appState {
+        // Save current level hours to AppState
+        if let appState = appState {
             let hours = selectedMinutes / 60.0
             appState.updateHours(hours, for: currentLevel)
         }
-
+        
+        // Move to next level or finish setup
         if let next = EnergyLevel(rawValue: currentLevel.rawValue + 1) {
             currentLevel = next
-            selectedMinutes = 0.0   // ✅ يبدأ صفر للمستوى اللي بعده
+            selectedMinutes = 0.0
         } else {
+            // After Low Energy, the setup is finished
             appState?.completeSetup()
         }
     }
-
-    
-    var formattedHoursMinutesText: String {
-        let hours = Int(selectedMinutes) / 60
-        let mins = Int(selectedMinutes) % 60
-        return "\(hours)h \(mins)m"
-    }
-
 }

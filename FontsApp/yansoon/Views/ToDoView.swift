@@ -3,7 +3,6 @@
 //  yansoon
 //
 //  Created by Sarah
-//
 
 import SwiftUI
 
@@ -13,6 +12,11 @@ struct ToDoView: View {
 
     @State private var selectedTask: TodoTask? = nil
     @State private var navigateToTimer = false
+    
+    // State for Editing
+    @State private var editingTask: TodoTask? = nil
+    @State private var showEditTaskSheet = false
+    
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -20,11 +24,8 @@ struct ToDoView: View {
             Color("Background").ignoresSafeArea()
 
             VStack(spacing: 0) {
-
-                // Header + Progress + Tasks
+                // Header + Progress Section
                 VStack(spacing: 16) {
-
-                    // Header
                     HStack {
                         Text("Add Your To Do")
                             .font(AppFont.main(size: 24))
@@ -44,7 +45,6 @@ struct ToDoView: View {
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
 
-                    // Progress
                     VStack(spacing: 12) {
                         HStack {
                             Image(energyImage(for: appState.currentMode))
@@ -76,50 +76,57 @@ struct ToDoView: View {
                         .frame(height: 12)
                     }
                     .padding(14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color("TaskBox"))
-                    )
+                    .background(RoundedRectangle(cornerRadius: 20).fill(Color("TaskBox")))
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
                     .padding(.bottom, 15)
 
-                    // Tasks
+                    // Tasks List
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Tasks")
                             .font(AppFont.main(size: 18))
                             .foregroundColor(Color("PrimaryText"))
                             .padding(.horizontal, 25)
 
-                        ScrollView {
-                            VStack(spacing: 12) {
-                                if appState.tasks.isEmpty {
-                                    VStack(spacing: 12) {
-                                        Image(systemName: "checklist")
-                                            .font(.system(size: 50))
-                                            .foregroundColor(Color("PrimaryText").opacity(0.3))
-
-                                        Text("No tasks yet")
-                                            .font(AppFont.main(size: 16))
-                                            .foregroundColor(Color("SecondaryText"))
+                        List {
+                            if appState.tasks.isEmpty {
+                                emptyStateView
+                            } else {
+                                ForEach(appState.tasks) { task in
+                                    TaskRow(task: task) {
+                                        selectedTask = task
+                                        navigateToTimer = true
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 60)
-                                } else {
-                                    ForEach(appState.tasks) { task in
-                                        TaskRow(task: task) {
-                                            selectedTask = task
-                                            navigateToTimer = true
+                                    .listRowBackground(Color.clear)
+                                    .listRowSeparator(.hidden)
+                                    .listRowInsets(EdgeInsets(top: 6, leading: 25, bottom: 6, trailing: 25))
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            editingTask = task
+                                            showEditTaskSheet = true
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
+                                        .tint(.green)
+                                    }
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            if let index = appState.tasks.firstIndex(where: { $0.id == task.id }) {
+                                                viewModel.deleteTask(at: IndexSet(integer: index))
+                                            }
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
                                         }
                                     }
                                 }
                             }
-                            .padding(.horizontal, 25)
                         }
+                        .listStyle(.plain)
+                        .scrollContentBackground(.hidden)
                     }
                     .frame(maxHeight: .infinity)
 
-                    // Add Button (مرة وحدة فقط)
+                    // Add Button
                     Button(action: { viewModel.showAddTaskSheet = true }) {
                         Image(systemName: "plus")
                             .font(.system(size: 24, weight: .medium))
@@ -134,47 +141,125 @@ struct ToDoView: View {
                 }
             }
 
-            
-            
-            
-            // Navigation (مرة وحدة فقط + بدون تداخل)
+            // Invisible NavigationLink
             NavigationLink(isActive: $navigateToTimer) {
                 if let task = selectedTask {
-                    TaskTimerView(task: task)
-                        .environmentObject(appState)
+                    TaskTimerView(task: task).environmentObject(appState)
                 } else {
                     EmptyView()
                 }
-            } label: {
-                EmptyView()
-            }
-            .hidden()
+            } label: { EmptyView() }.hidden()
         }
-        .onAppear {
-            viewModel.appState = appState
-        }
+        .onAppear { viewModel.appState = appState }
         .sheet(isPresented: $viewModel.showAddTaskSheet) {
             AddTaskSheet(viewModel: viewModel)
-                .environmentObject(appState)
         }
-
-        .sheet(isPresented: $viewModel.showModeSelectionSheet) {
-            ModeSelectionSheet(viewModel: viewModel, currentMode: appState.currentMode)
+        // Fix: Use item-based sheet for reliable data passing
+        .sheet(item: $editingTask) { task in
+            EditTaskSheet(task: task).environmentObject(appState)
         }
-        // Notification Sheet
         .sheet(isPresented: $appState.showEnergySelectionPrompt) {
-            EnergyCheckInSheet()
-                .environmentObject(appState)
+            EnergyCheckInSheet().environmentObject(appState)
         }
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-          
+    }
 
-         
+    private var emptyStateView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checklist")
+                .font(.system(size: 50))
+                .foregroundColor(Color("PrimaryText").opacity(0.3))
+            Text("No tasks yet")
+                .font(AppFont.main(size: 16))
+                .foregroundColor(Color("SecondaryText"))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+}
+
+// MARK: - Edit Task Sheet (Matching AddTaskSheet Design)
+struct EditTaskSheet: View {
+    @EnvironmentObject var appState: AppStateViewModel
+    @Environment(\.dismiss) var dismiss
+    @StateObject private var timeLimitVM = TimeLimitViewModel()
+    
+    let task: TodoTask
+    @State private var editedTitle: String
+
+    init(task: TodoTask) {
+        self.task = task
+        _editedTitle = State(initialValue: task.title)
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color("Background").ignoresSafeArea()
+
+                VStack(spacing: 25) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Task Name")
+                            .font(AppFont.main(size: 16))
+                            .foregroundColor(Color("SecondaryText"))
+
+                        TextField("Enter task name", text: $editedTitle)
+                            .font(AppFont.main(size: 18))
+                            .foregroundColor(Color("PrimaryText"))
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color("TaskBox")))
+                    }
+
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Estimated Time")
+                            .font(AppFont.main(size: 16))
+                            .foregroundColor(Color("SecondaryText"))
+
+                        CircularSlidersheet(viewModel: timeLimitVM)
+                            .frame(height: 320)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        if let index = appState.tasks.firstIndex(where: { $0.id == task.id }) {
+                            appState.tasks[index].title = editedTitle
+                            appState.tasks[index].estimatedMinutes = timeLimitVM.selectedMinutes
+                        }
+                        dismiss()
+                    }) {
+                        Text("Save Changes")
+                            .font(AppFont.main(size: 18))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color("PrimaryButtons"))
+                            .cornerRadius(12)
+                    }
+                    .disabled(editedTitle.isEmpty || timeLimitVM.selectedMinutes < 5)
+                }
+                .padding(25)
+            }
+            .navigationTitle("Edit Task")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }.foregroundColor(Color("PrimaryButtons"))
+                }
+            }
+            .onAppear {
+                timeLimitVM.selectedMinutes = task.estimatedMinutes
+            }
         }
     }
 }
 
+// Helper to use task in .sheet(item:)
+
+
+// Rest of your components (TaskRow, AddTaskSheet, etc.) remain unchanged
 struct TaskRow: View {
     let task: TodoTask
     let onTap: () -> Void
@@ -220,7 +305,6 @@ struct AddTaskSheet: View {
     @ObservedObject var viewModel: ToDoViewModel
     @Environment(\.dismiss) var dismiss
     @StateObject private var timeLimitVM = TimeLimitViewModel()
-    @EnvironmentObject var appState: AppStateViewModel
 
     var body: some View {
         NavigationView {
@@ -282,16 +366,11 @@ struct AddTaskSheet: View {
                 }
             }
             .onAppear {
-                timeLimitVM.appState = appState
-
-                // ✅ خليه يشتغل على ليفل اليوزر الحالي + يجيب ساعاته
-                timeLimitVM.setLevelToUserMode()
-
-                // قيم افتراضية للـ viewModel (اختياري)
+                // لو تبين تربط slider بالمود الحالي (إذا عندك طريقة)
+                // مثال: timeLimitVM.currentLevel = appState.currentMode   (لو نفس النوع)
                 viewModel.newTaskHours = 0.0
                 viewModel.newTaskMinutes = 5.0
             }
-
             .onChange(of: timeLimitVM.selectedMinutes) { newValue in
                 viewModel.newTaskHours = Double(Int(newValue) / 60)
                 viewModel.newTaskMinutes = Double(Int(newValue) % 60)
@@ -400,6 +479,7 @@ private func energyImage(for level: EnergyLevel) -> String {
 }
 
 // MARK: - Circular Slider (00:00)
+// MARK: - Circular Slider (00:00)
 struct CircularSlidersheet: View {
     @ObservedObject var viewModel: TimeLimitViewModel
 
@@ -415,7 +495,8 @@ struct CircularSlidersheet: View {
     private var minutes: Int { Int(viewModel.selectedMinutes) % 60 }
 
     private func updateValue(with value: DragGesture.Value) {
-        let vector = CGVector(dx: value.location.x - sliderSize/2, dy: value.location.y - sliderSize/2)
+        let center = sliderSize / 2
+        let vector = CGVector(dx: value.location.x - center, dy: value.location.y - center)
         let radians = atan2(vector.dy, vector.dx)
         var angle = Double(radians * 180 / .pi) + 90
         if angle < 0 { angle += 360 }
@@ -429,7 +510,6 @@ struct CircularSlidersheet: View {
         ZStack {
             Circle()
                 .stroke(Color("PrimaryText").opacity(0.1), lineWidth: 10)
-                .frame(width: sliderSize, height: sliderSize)
 
             Circle()
                 .trim(from: 0, to: CGFloat(min(max(progress, 0), 1)))
@@ -437,32 +517,50 @@ struct CircularSlidersheet: View {
                     viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"),
                     style: StrokeStyle(lineWidth: 10, lineCap: .round)
                 )
-                .frame(width: sliderSize, height: sliderSize)
                 .rotationEffect(.degrees(-90))
 
-            // h m display
-            Text("\(hours)h \(minutes)m")
-                .font(AppFont.main(size: 52))
-                .foregroundColor(Color("PrimaryText"))
-                .monospacedDigit()
+            // Updated Display: 00h:00m
+                        HStack(alignment: .lastTextBaseline, spacing: 2) {
+                            Text(String(format: "%02d", hours))
+                                .font(AppFont.main(size: 55)) // Slightly smaller to fit labels
+                                .foregroundColor(Color("PrimaryText"))
+                            
+                            Text("h")
+                                .font(AppFont.main(size: 20))
+                                .foregroundColor(Color("SecondaryText"))
+                                .padding(.trailing, 2)
 
+                            Text(":")
+                                .font(AppFont.main(size: 40))
+                                .foregroundColor(Color("SecondaryText"))
+                                .padding(.bottom, 8)
 
+                            Text(String(format: "%02d", minutes))
+                                .font(AppFont.main(size: 55))
+                                .foregroundColor(Color("PrimaryText"))
+                            
+                            Text("m")
+                                .font(AppFont.main(size: 20))
+                                .foregroundColor(Color("SecondaryText"))
+                        }
+
+            // Knob (Visual only)
             Circle()
                 .fill(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"))
                 .frame(width: 24, height: 24)
                 .offset(y: -sliderSize / 2)
                 .rotationEffect(.degrees(progress * 360))
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            updateValue(with: value)
-                        }
-                )
         }
         .frame(width: sliderSize, height: sliderSize)
+        .contentShape(Circle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    updateValue(with: value)
+                }
+        )
     }
 }
-
 #Preview("To Do View") {
     ToDoView(viewModel: ToDoViewModel())
         .environmentObject({

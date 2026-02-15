@@ -8,9 +8,11 @@
 
 import SwiftUI
 
+
 struct EnergySelectionView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @StateObject private var selectionVM = EnergySelectionViewModel()
+    @Environment(\.dismiss) var dismiss // 1. ADD THIS LINE
     
     var body: some View {
         VStack(spacing: 0) {
@@ -48,15 +50,9 @@ struct EnergySelectionView: View {
             Button(action: {
                 guard let selected = selectionVM.selectedLevel else { return }
                 
-                // 1. Update the current mode
                 appState.currentMode = selected
-                
-                // 2. IMPORTANT: Schedule the first notification immediately
                 appState.scheduleEnergyCheckIn()
                 print("⏰ Initial Notification Scheduled")
-
-                // 3. Mark setup as complete.
-                // This triggers MainFlowView to switch from Setup Flow to ToDoView
                 appState.completeSetup()
                 
             }) {
@@ -79,6 +75,20 @@ struct EnergySelectionView: View {
         }
         .background(Color("Background").ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        // 2. ADD THIS TOOLBAR MODIFIER HERE:
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss() // This takes you back to TimeLimitView (Low Energy)
+                }) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .foregroundColor(Color("PrimaryButtons"))
+                }
+            }
+        }
     }
 }
 // MARK: - EnergyButton Component

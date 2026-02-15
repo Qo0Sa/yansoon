@@ -1,20 +1,18 @@
-
 //
 //  TimeLimitView.swift
 //  yansoon
 //
-//  Created by Noor Alhassani on 16/08/1447 AH.
-//
-//
-
-
 import SwiftUI
 
 struct TimeLimitView: View {
     @ObservedObject var viewModel: TimeLimitViewModel
     @EnvironmentObject var appState: AppStateViewModel
-    @Environment(\.dismiss) private var dismiss   // ✅
-
+    @Environment(\.dismiss) var dismiss
+    
+    // Helper to extract hours and minutes for the display
+    private var hours: Int { Int(viewModel.selectedMinutes) / 60 }
+    private var minutes: Int { Int(viewModel.selectedMinutes) % 60 }
+    
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
@@ -23,7 +21,7 @@ struct TimeLimitView: View {
                 Spacer()
                 VStack(spacing: 12) {
                     Text("Set your working hours based on energy")
-                           .font(AppFont.main(size: 18))
+                        .font(AppFont.main(size: 18))
                     Text(viewModel.currentLevel.title)
                         .font(AppFont.main(size: 18))
                         .opacity(0.7)
@@ -42,15 +40,30 @@ struct TimeLimitView: View {
                         .foregroundColor(Color("PrimaryButtons"))
                 }
                 
-                Text(viewModel.formattedHoursMinutesText)
-                    .font(AppFont.main(size: 52))
-                    .foregroundColor(Color("PrimaryText"))
+                // MARK: - Updated Time Display with h and m
+                HStack(alignment: .lastTextBaseline, spacing: 2) {
+                    Text(String(format: "%02d", hours))
+                        .font(AppFont.main(size: 80))
+                        .foregroundColor(Color("PrimaryText"))
+                    
+                    Text("h")
+                        .font(AppFont.main(size: 24))
+                        .foregroundColor(Color("SecondaryText"))
+                        .padding(.trailing, 5)
 
+                    Text(String(format: "%02d", minutes))
+                        .font(AppFont.main(size: 80))
+                        .foregroundColor(Color("PrimaryText"))
+                    
+                    Text("m")
+                        .font(AppFont.main(size: 24))
+                        .foregroundColor(Color("SecondaryText"))
+                }
+                
                 Spacer()
                 
                 VStack(spacing: 20) {
                     if viewModel.currentLevel == .low {
-                        // CRITICAL: Navigate to EnergySelectionView on the last xstep
                         NavigationLink(destination: EnergySelectionView().environmentObject(appState)) {
                             Text("Next")
                                 .font(AppFont.main(size: 20))
@@ -61,7 +74,11 @@ struct TimeLimitView: View {
                                 .cornerRadius(15)
                         }
                     } else {
-                        Button(action: { viewModel.nextLevel() }) {
+                        Button(action: {
+                            withAnimation {
+                                viewModel.nextLevel()
+                            }
+                        }) {
                             Text("Next")
                                 .font(AppFont.main(size: 20))
                                 .foregroundColor(.black)
@@ -85,13 +102,31 @@ struct TimeLimitView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-                .navigationBarBackButtonHidden(false) // ✅ نخفي الافتراضي
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            if viewModel.currentLevel != .high {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        if let previous = EnergyLevel(rawValue: viewModel.currentLevel.rawValue - 1) {
+                            withAnimation {
+                                viewModel.currentLevel = previous
+                                viewModel.selectedMinutes = appState.energySettings.hours(for: previous) * 60
+                            }
+                        }
+                    }) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .foregroundColor(Color("PrimaryButtons"))
+                    }
+                }
+            }
+        }
     }
-    
-    
-    
 }
-// MARK: - Refined Slider Component
+
+// MARK: - Circular Slider Component
 struct CircularSliderComponent: View {
     @ObservedObject var viewModel: TimeLimitViewModel
     
@@ -101,26 +136,20 @@ struct CircularSliderComponent: View {
         viewModel.selectedMinutes / (viewModel.currentLevel.maxHours * 60)
     }
     
-    // Helper function to pick the right asset based on level
     private func imageName(for level: EnergyLevel) -> String {
         switch level {
-        case .high:
-            return "yansoonStatus/high"
-        case .medium:
-            return "yansoonStatus/medium"
-        case .low:
-            return "yansoonStatus/low"
+        case .high: return "yansoonStatus/high"
+        case .medium: return "yansoonStatus/medium"
+        case .low: return "yansoonStatus/low"
         }
     }
     
     var body: some View {
         ZStack {
-            // Background Track
             Circle()
                 .stroke((Color("PrimaryText")).opacity(0.1), lineWidth: 10)
                 .frame(width: sliderSize, height: sliderSize)
             
-            // Progress Bar
             Circle()
                 .trim(from: 0, to: CGFloat(progress))
                 .stroke(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"),
@@ -128,30 +157,31 @@ struct CircularSliderComponent: View {
                 .frame(width: sliderSize, height: sliderSize)
                 .rotationEffect(.degrees(-90))
             
-            // Center Anise Image - Now DYNAMIC
             Image(imageName(for: viewModel.currentLevel))
                 .resizable()
                 .scaledToFit()
                 .frame(width: 220, height: 220)
                 .animation(.easeInOut, value: viewModel.currentLevel)
             
-            // Knob - Locked to the bar
             Circle()
                 .fill(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"))
                 .frame(width: 24, height: 24)
                 .offset(y: -sliderSize / 2)
                 .rotationEffect(.degrees(progress * 360))
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            updateValue(with: value)
-                        }
-                )
         }
+        .frame(width: sliderSize, height: sliderSize)
+        .contentShape(Circle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    updateValue(with: value)
+                }
+        )
     }
     
     private func updateValue(with value: DragGesture.Value) {
-        let vector = CGVector(dx: value.location.x, dy: value.location.y)
+        let center = sliderSize / 2
+        let vector = CGVector(dx: value.location.x - center, dy: value.location.y - center)
         let radians = atan2(vector.dy, vector.dx)
         var angle = Double(radians * 180 / .pi) + 90
         
@@ -163,19 +193,10 @@ struct CircularSliderComponent: View {
     }
 }
 
-
-//struct TimeLimitView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        let mockVM = TimeLimitViewModel()
-//        mockVM.currentLevel = .high
-//
-//        let appState = AppStateViewModel()
-//
-//        return NavigationStack {
-//            TimeLimitView(viewModel: mockVM)
-//                .environmentObject(appState)
-//        }
-//        .preferredColorScheme(.dark)
-//    }
-//}
-
+#Preview {
+    let mockVM = TimeLimitViewModel()
+    mockVM.currentLevel = .high
+    return TimeLimitView(viewModel: mockVM)
+        .environmentObject(AppStateViewModel())
+        .preferredColorScheme(.dark)
+}

@@ -120,13 +120,13 @@ final class TaskTimerViewModel: ObservableObject {
     func done() {
         stopTicking()
         isRunning = false
-
         recalcFromClock()
         model.state = .finished
 
-        persistProgress(markCompleted: true)
+        persistProgress()      // ✅ بدون markCompleted
         clearTimerState()
     }
+
 
     /// ✅ نستخدمها لما يرجع التطبيق foreground أو onAppear
     func syncNow() {
@@ -189,11 +189,7 @@ final class TaskTimerViewModel: ObservableObject {
 
         appState.updateTaskActualTime(taskId: taskId, minutes: totalWorkedMinutes)
 
-        if markCompleted, let idx = appState.tasks.firstIndex(where: { $0.id == taskId }) {
-            var t = appState.tasks[idx]
-            t.isCompleted = true
-            appState.updateTask(t)
-        }
+      
     }
 
     // MARK: - UserDefaults state

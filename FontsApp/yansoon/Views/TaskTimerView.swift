@@ -228,7 +228,7 @@ struct TaskTimerView: View {
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color("DoneButton"))
+                            .background(.primaryButtons)
                             .cornerRadius(15)
                     }
                     
@@ -239,9 +239,9 @@ struct TaskTimerView: View {
                     } label: {
                         Image(systemName: playPauseIcon)
                             .font(.system(size: 20, weight: .semibold))
-                            .foregroundColor(.black)
+                            .foregroundColor(.  primaryButtons)
                             .frame(width: 56, height: 56)
-                            .background(Color("PrimaryButtons"))
+                            .background(.primaryButtons.opacity(0.2))
                             .cornerRadius(12)
                     }
                 }
@@ -278,20 +278,19 @@ struct TaskTimerView: View {
         }
         // إخفاء عناصر شريط التنقل الافتراضي
         .navigationBarBackButtonHidden(true)
-        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
-                    saveAndDismiss()
+                    vm.pause()     // اختياري: يوقف التايمر قبل الرجوع
+                    dismiss()      // يرجع فقط بدون ما يسوي Done
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "chevron.backward")
-                       
-                    }
-                    .foregroundColor(Color("PrimaryButtons"))
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(Color("PrimaryButtons"))
                 }
             }
         }
+
     }
 }
 

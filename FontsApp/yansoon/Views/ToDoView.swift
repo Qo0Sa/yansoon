@@ -2,7 +2,6 @@
 //  ToDoView.swift
 //  yansoon
 //
-//  Created by Sarah
 
 import SwiftUI
 
@@ -17,7 +16,15 @@ struct ToDoView: View {
     @State private var editingTask: TodoTask? = nil
     @State private var showEditTaskSheet = false
     
+    // State for Burnout Alert
+    @State private var showBurnoutAlert = false
+    
     @Environment(\.dismiss) private var dismiss
+
+    // Helper to check achievement state
+    private var isShowingAchievement: Bool {
+        !appState.tasks.isEmpty && appState.tasks.allSatisfy({ $0.isCompleted })
+    }
 
     var body: some View {
         ZStack {
@@ -82,6 +89,17 @@ struct ToDoView: View {
                     .padding(.bottom, 15)
 
                     // Tasks List
+                    //debugger code to fill time
+//                    Button("DEBUG: Fill Energy") {
+//                        if let firstTask = appState.tasks.first {
+//                            // Add 10 hours of work instantly
+//                            appState.addCompletedTime(taskId: firstTask.id, minutes: 600)
+//                        }
+//                    }
+//                    .padding()
+//                    .background(Color.red.opacity(0.2))
+//                    .cornerRadius(10)
+                    //debugger code to fill time
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Tasks")
                             .font(AppFont.main(size: 18))
@@ -91,15 +109,28 @@ struct ToDoView: View {
                         List {
                             if appState.tasks.isEmpty {
                                 emptyStateView
-                            } else {
+                            }
+                            else if isShowingAchievement {
+                                achievementView
+                            }
+                            else {
                                 ForEach(appState.tasks) { task in
+                                    // Modified Row Logic for Locked State
                                     TaskRow(task: task) {
-                                        selectedTask = task
-                                        navigateToTimer = true
+                                        if appState.progress >= 1.0 && !task.isCompleted {
+                                            // Trigger pop-up if energy is full and task isn't done
+                                            showBurnoutAlert = true
+                                        } else {
+                                            selectedTask = task
+                                            navigateToTimer = true
+                                        }
                                     }
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
                                     .listRowInsets(EdgeInsets(top: 6, leading: 25, bottom: 6, trailing: 25))
+                                    // Visual grayish/locked effect
+                                    .opacity(appState.progress >= 1.0 && !task.isCompleted ? 0.5 : 1.0)
+                                    .grayscale(appState.progress >= 1.0 && !task.isCompleted ? 1.0 : 0.0)
                                     .swipeActions(edge: .leading) {
                                         Button {
                                             editingTask = task
@@ -126,8 +157,13 @@ struct ToDoView: View {
                     }
                     .frame(maxHeight: .infinity)
 
-                    // Add Button
-                    Button(action: { viewModel.showAddTaskSheet = true }) {
+                    // Add Button - Keeping it visible as requested
+                    Button(action: {
+                        if isShowingAchievement {
+                            appState.clearCompletedTasks()
+                        }
+                        viewModel.showAddTaskSheet = true
+                    }) {
                         Image(systemName: "plus")
                             .font(.system(size: 24, weight: .medium))
                             .foregroundColor(.black)
@@ -154,12 +190,17 @@ struct ToDoView: View {
         .sheet(isPresented: $viewModel.showAddTaskSheet) {
             AddTaskSheet(viewModel: viewModel)
         }
-        // Fix: Use item-based sheet for reliable data passing
         .sheet(item: $editingTask) { task in
             EditTaskSheet(task: task).environmentObject(appState)
         }
         .sheet(isPresented: $appState.showEnergySelectionPrompt) {
             EnergyCheckInSheet().environmentObject(appState)
+        }
+        // Burnout Pop-up
+        .alert("Energy Limit Reached", isPresented: $showBurnoutAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your energy cannot handle more tasks, you will burn out.")
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -178,8 +219,89 @@ struct ToDoView: View {
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
     }
+    
+    private var achievementView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "cup.and.saucer.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80, height: 80)
+                .foregroundColor(Color("PrimaryButtons"))
+            
+            Text("Task Accomplished!")
+                .font(AppFont.main(size: 20))
+                .foregroundColor(Color("PrimaryText"))
+            
+            Text("Time for a warm cup of Yansoon.")
+                .font(AppFont.main(size: 14))
+                .foregroundColor(Color("SecondaryText"))
+            
+            Button(action: {
+                withAnimation { appState.clearCompletedTasks() }
+            }) {
+                Text("Start Fresh")
+                    .font(AppFont.main(size: 16))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color("PrimaryButtons"))
+                    .cornerRadius(12)
+            }
+            .padding(.top, 10)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 50)
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
 }
 
+// MARK: - Updated TaskRow with Locked Visuals
+struct TaskRow: View {
+    @EnvironmentObject var appState: AppStateViewModel
+    let task: TodoTask
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                if task.isCompleted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Color("PrimaryButtons"))
+                        .frame(width: 20, height: 20)
+                } else {
+                    // Show lock if energy is full and task is incomplete
+                    Image(systemName: appState.progress >= 1.0 ? "lock.fill" : "circle")
+                        .foregroundColor(appState.progress >= 1.0 ? Color("OffLimit") : Color("PrimaryButtons"))
+                        .font(.system(size: 19))
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(task.title)
+                        .font(AppFont.main(size: 16))
+                        .foregroundColor(task.isCompleted ? Color("SecondaryText") : Color("PrimaryText"))
+                        .strikethrough(task.isCompleted, color: Color("SecondaryText"))
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color("TaskBox"))
+            )
+            // Visual border cue for locked tasks
+            .overlay(
+                RoundedRectangle(cornerRadius: 15)
+                    .stroke(Color("OffLimit").opacity(appState.progress >= 1.0 && !task.isCompleted ? 0.3 : 0), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(), value: task.isTimerRunning)
+    }
+}
 // MARK: - Edit Task Sheet (Matching AddTaskSheet Design)
 struct EditTaskSheet: View {
     @EnvironmentObject var appState: AppStateViewModel
@@ -257,48 +379,6 @@ struct EditTaskSheet: View {
 }
 
 // Helper to use task in .sheet(item:)
-
-
-// Rest of your components (TaskRow, AddTaskSheet, etc.) remain unchanged
-struct TaskRow: View {
-    let task: TodoTask
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                 if task.isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(Color("PrimaryButtons"))
-                        .frame(width: 20, height: 20)
-                        .transition(.scale)
-                } else {
-                        Image(systemName: "circle")
-                        .foregroundColor(Color("PrimaryButtons"))
-                        .font(.system(size: 19))
-                        .transition(.scale)
-                        }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(task.title)
-                        .font(AppFont.main(size: 16))
-                        .foregroundColor(Color("PrimaryText"))
-                        .multilineTextAlignment(.leading)
-                }
-
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(Color("TaskBox"))
-            )
-        }
-        .buttonStyle(.plain)
-        .animation(.spring(), value: task.isTimerRunning)
-    }
-}
 
 // Add Task Sheet
 struct AddTaskSheet: View {

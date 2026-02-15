@@ -1,3 +1,4 @@
+
 //
 //  ToDoView.swift
 //  yansoon
@@ -87,9 +88,7 @@ struct ToDoView: View {
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
                     .padding(.bottom, 15)
-
-                    // Tasks List
-                    //debugger code to fill time
+////debuuger
 //                    Button("DEBUG: Fill Energy") {
 //                        if let firstTask = appState.tasks.first {
 //                            // Add 10 hours of work instantly
@@ -99,7 +98,9 @@ struct ToDoView: View {
 //                    .padding()
 //                    .background(Color.red.opacity(0.2))
 //                    .cornerRadius(10)
-                    //debugger code to fill time
+                    //debugger
+                    
+                    // Tasks List
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Tasks")
                             .font(AppFont.main(size: 18))
@@ -157,23 +158,23 @@ struct ToDoView: View {
                     }
                     .frame(maxHeight: .infinity)
 
-                    // Add Button - Keeping it visible as requested
-                    Button(action: {
-                        if isShowingAchievement {
-                            appState.clearCompletedTasks()
+                    // Add Button - HIDDEN when achievement is showing
+                    if !isShowingAchievement {
+                        Button(action: {
+                            viewModel.showAddTaskSheet = true
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
+                                .background(Color("PrimaryButtons"))
+                                .cornerRadius(15)
                         }
-                        viewModel.showAddTaskSheet = true
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 24, weight: .medium))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color("PrimaryButtons"))
-                            .cornerRadius(15)
+                        .padding(.horizontal, 25)
+                        .padding(.bottom, 30)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 25)
-                    .padding(.bottom, 30)
                 }
             }
 
@@ -186,6 +187,19 @@ struct ToDoView: View {
                 }
             } label: { EmptyView() }.hidden()
         }
+        // --- Part 3 Logic Integrated Here ---
+        .alert("Are you done working?", isPresented: $appState.showPostTaskPopUp) {
+            Button("Yes") {
+                appState.showEnergySelectionPrompt = true
+            }
+            Button("No", role: .cancel) { }
+        } message: {
+            Text("To help track your burnout, please check in on your energy levels.")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            appState.handleReturnToApp()
+        }
+        // -------------------------------------
         .onAppear { viewModel.appState = appState }
         .sheet(isPresented: $viewModel.showAddTaskSheet) {
             AddTaskSheet(viewModel: viewModel)
@@ -256,6 +270,15 @@ struct ToDoView: View {
     }
 }
 
+// MARK: - Helper Function
+private func energyImage(for level: EnergyLevel) -> String {
+    switch level {
+    case .high: return "yansoonStatus/high"
+    case .medium: return "yansoonStatus/medium"
+    case .low: return "yansoonStatus/low"
+    }
+}
+
 // MARK: - Updated TaskRow with Locked Visuals
 struct TaskRow: View {
     @EnvironmentObject var appState: AppStateViewModel
@@ -302,7 +325,8 @@ struct TaskRow: View {
         .animation(.spring(), value: task.isTimerRunning)
     }
 }
-// MARK: - Edit Task Sheet (Matching AddTaskSheet Design)
+
+// MARK: - Edit Task Sheet
 struct EditTaskSheet: View {
     @EnvironmentObject var appState: AppStateViewModel
     @Environment(\.dismiss) var dismiss
@@ -378,9 +402,7 @@ struct EditTaskSheet: View {
     }
 }
 
-// Helper to use task in .sheet(item:)
-
-// Add Task Sheet
+// MARK: - Add Task Sheet
 struct AddTaskSheet: View {
     @ObservedObject var viewModel: ToDoViewModel
     @Environment(\.dismiss) var dismiss
@@ -446,8 +468,6 @@ struct AddTaskSheet: View {
                 }
             }
             .onAppear {
-                // لو تبين تربط slider بالمود الحالي (إذا عندك طريقة)
-                // مثال: timeLimitVM.currentLevel = appState.currentMode   (لو نفس النوع)
                 viewModel.newTaskHours = 0.0
                 viewModel.newTaskMinutes = 5.0
             }
@@ -456,16 +476,6 @@ struct AddTaskSheet: View {
                 viewModel.newTaskMinutes = Double(Int(newValue) % 60)
             }
         }
-    }
-}
-
-struct ModeSelectionSheet: View {
-    @ObservedObject var viewModel: ToDoViewModel
-    let currentMode: EnergyLevel
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        ZStack { Color("Background").ignoresSafeArea() }
     }
 }
 
@@ -550,15 +560,6 @@ struct EnergyCheckInSheet: View {
     }
 }
 
-private func energyImage(for level: EnergyLevel) -> String {
-    switch level {
-    case .high: return "yansoonStatus/high"
-    case .medium: return "yansoonStatus/medium"
-    case .low: return "yansoonStatus/low"
-    }
-}
-
-// MARK: - Circular Slider (00:00)
 // MARK: - Circular Slider (00:00)
 struct CircularSlidersheet: View {
     @ObservedObject var viewModel: TimeLimitViewModel
@@ -599,32 +600,30 @@ struct CircularSlidersheet: View {
                 )
                 .rotationEffect(.degrees(-90))
 
-            // Updated Display: 00h:00m
-                        HStack(alignment: .lastTextBaseline, spacing: 2) {
-                            Text(String(format: "%02d", hours))
-                                .font(AppFont.main(size: 55)) // Slightly smaller to fit labels
-                                .foregroundColor(Color("PrimaryText"))
-                            
-                            Text("h")
-                                .font(AppFont.main(size: 20))
-                                .foregroundColor(Color("SecondaryText"))
-                                .padding(.trailing, 2)
+            HStack(alignment: .lastTextBaseline, spacing: 2) {
+                Text(String(format: "%02d", hours))
+                    .font(AppFont.main(size: 55))
+                    .foregroundColor(Color("PrimaryText"))
+                
+                Text("h")
+                    .font(AppFont.main(size: 20))
+                    .foregroundColor(Color("SecondaryText"))
+                    .padding(.trailing, 2)
 
-                            Text(":")
-                                .font(AppFont.main(size: 40))
-                                .foregroundColor(Color("SecondaryText"))
-                                .padding(.bottom, 8)
+                Text(":")
+                    .font(AppFont.main(size: 40))
+                    .foregroundColor(Color("SecondaryText"))
+                    .padding(.bottom, 8)
 
-                            Text(String(format: "%02d", minutes))
-                                .font(AppFont.main(size: 55))
-                                .foregroundColor(Color("PrimaryText"))
-                            
-                            Text("m")
-                                .font(AppFont.main(size: 20))
-                                .foregroundColor(Color("SecondaryText"))
-                        }
+                Text(String(format: "%02d", minutes))
+                    .font(AppFont.main(size: 55))
+                    .foregroundColor(Color("PrimaryText"))
+                
+                Text("m")
+                    .font(AppFont.main(size: 20))
+                    .foregroundColor(Color("SecondaryText"))
+            }
 
-            // Knob (Visual only)
             Circle()
                 .fill(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"))
                 .frame(width: 24, height: 24)
@@ -641,6 +640,7 @@ struct CircularSlidersheet: View {
         )
     }
 }
+
 #Preview("To Do View") {
     ToDoView(viewModel: ToDoViewModel())
         .environmentObject({

@@ -2,6 +2,10 @@
 //  AppStateViewModel.swift
 //  yansoon
 //
+//
+//  AppStateViewModel.swift
+//  yansoon
+//
 
 import Foundation
 import SwiftUI
@@ -14,14 +18,17 @@ final class AppStateViewModel: ObservableObject {
     @Published var tasks: [TodoTask]
     @Published var isSetupComplete: Bool
     
-    // Triggers Energy Check-In Sheet
+    // Triggers for Sheets and Alerts
     @Published var showEnergySelectionPrompt: Bool = false
-    
+    @Published var showPostTaskPopUp: Bool = false // Part 3 Pop-up trigger
+
     private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
     
-    // MARK: - Computed
-    var totalHoursForCurrentMode: Double { energySettings.hours(for: currentMode) }
+    // MARK: - Computed Properties
+    var totalHoursForCurrentMode: Double {
+        energySettings.hours(for: currentMode)
+    }
     
     var totalWorkedMinutes: Double {
         tasks.reduce(0) { $0 + $1.actualMinutes }
@@ -59,28 +66,9 @@ final class AppStateViewModel: ObservableObject {
         self.isSetupComplete = storage.isSetupComplete()
         
         setupAutoSave()
-        setupNotificationObserver() // ✅
     }
     
-    // MARK: - Notification Observer
-    private func setupNotificationObserver() {
-        NotificationCenter.default.publisher(for: .showEnergySelection)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                print("⚡️ [AppState] Notification received! Opening sheet...")
-                self?.showEnergySelectionPrompt = true
-            }
-            .store(in: &cancellables)
-    }
-    
-    //    @objc private func handleEnergyCheckInNotification() {
-    //        print("⚡️ [AppState] Notification signal received! Opening sheet...")
-    //        DispatchQueue.main.async { [weak self] in
-    //            self?.showEnergySelectionPrompt = true
-    //        }
-    //    }
-    
-    // MARK: - Auto Save
+    // MARK: - Auto Save Logic
     private func setupAutoSave() {
         $energySettings
             .dropFirst()
@@ -105,7 +93,7 @@ final class AppStateViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
-    // MARK: - Setup / Mode
+    // MARK: - Setup & Mode Management
     func completeSetup() {
         isSetupComplete = true
     }
@@ -118,7 +106,7 @@ final class AppStateViewModel: ObservableObject {
         guard newMode != currentMode else { return }
         currentMode = newMode
         resetAllTaskProgress()
-        scheduleEnergyCheckIn()
+        // Note: Manual scheduling removed to favor Part 3 reactive logic.
     }
     
     private func resetAllTaskProgress() {
@@ -128,11 +116,16 @@ final class AppStateViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Notifications
-    func scheduleEnergyCheckIn() {
-        notificationManager.scheduleEnergyCheckIn(for: currentMode)
+    // MARK: - Part 3: Return to App Logic
+    /// Called when the app becomes active to check if a "Done" pop-up is pending
+    func handleReturnToApp() {
+        if UserDefaults.standard.bool(forKey: "pending_done_check") {
+            showPostTaskPopUp = true
+            UserDefaults.standard.set(false, forKey: "pending_done_check")
+        }
     }
     
+    // MARK: - Notification Permissions
     func requestNotificationPermission() async -> Bool {
         await notificationManager.requestAuthorization()
     }
@@ -141,7 +134,7 @@ final class AppStateViewModel: ObservableObject {
         showEnergySelectionPrompt = false
     }
     
-    // MARK: - Tasks
+    // MARK: - Task Management
     func addTask(_ task: TodoTask) {
         tasks.append(task)
     }
@@ -168,26 +161,23 @@ final class AppStateViewModel: ObservableObject {
         }
     }
     
-    
     func markTaskDone(_ taskId: UUID) {
         guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
         tasks[index].isCompleted = true
         tasks[index].isTimerRunning = false
     }
     
-    
-    
     func addCompletedTime(taskId: UUID, minutes: Double) {
         guard minutes > 0 else { return }
         guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
-        
         tasks[index].actualMinutes += minutes
-        
-        // ❌ لا تحكمين هنا إن task اكتملت
-        // ✅ completion يصير فقط من زر Done
+    }
+
+    func clearCompletedTasks() {
+        tasks.removeAll(where: { $0.isCompleted })
     }
     
-    // MARK: - Reset
+    // MARK: - Reset App
     func resetApp() {
         StorageManager.shared.clearAll()
         energySettings = .default
@@ -196,13 +186,4 @@ final class AppStateViewModel: ObservableObject {
         isSetupComplete = false
         notificationManager.cancelAllNotifications()
     }
-    
-    
-    
-// Add this to AppStateViewModel.swift
-func clearCompletedTasks() {
-    tasks.removeAll(where: { $0.isCompleted })
 }
-
-}
- 

@@ -8,7 +8,6 @@
 
 import SwiftUI
 
-
 struct EnergySelectionView: View {
     @EnvironmentObject var appState: AppStateViewModel
     @StateObject private var selectionVM = EnergySelectionViewModel()
@@ -51,7 +50,7 @@ struct EnergySelectionView: View {
                 guard let selected = selectionVM.selectedLevel else { return }
                 
                 appState.currentMode = selected
-                appState.scheduleEnergyCheckIn()
+              
                 print("⏰ Initial Notification Scheduled")
                 appState.completeSetup()
                 

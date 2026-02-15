@@ -1,193 +1,82 @@
+
 //
-//  NotificationManger.swift
+//  NotificationManager.swift
 //  yansoon
 //
-
 
 import Foundation
 import UserNotifications
 import UIKit
-import Combine
 
-class NotificationManager: NSObject, ObservableObject {
+final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     
-    @Published var authorizationStatus: UNAuthorizationStatus = .notDetermined
-    
-    private let notificationCenter = UNUserNotificationCenter.current()
-    private let energyCheckInIdentifier = "energyCheckIn"
-    
-    override init() {
+    private override init() {
         super.init()
-        // Critical: Set delegate immediately to handle taps
-        notificationCenter.delegate = self
-        checkAuthorizationStatus()
+        // ✅ Set the delegate so we can control how notifications appear
+        UNUserNotificationCenter.current().delegate = self
     }
     
-    // MARK: - Authorization
-    
+    /// Requests user permission for notifications
     func requestAuthorization() async -> Bool {
         do {
-            let granted = try await notificationCenter.requestAuthorization(options: [.alert, .sound, .badge])
-            await MainActor.run {
-                authorizationStatus = granted ? .authorized : .denied
-            }
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
+            print(granted ? "✅ Notification Permission Granted" : "❌ Notification Permission Denied")
             return granted
         } catch {
-            print("❌ Notification authorization error: \(error)")
+            print("❌ Authorization Error: \(error.localizedDescription)")
             return false
         }
     }
     
-    func checkAuthorizationStatus() {
-        Task {
-            let settings = await notificationCenter.notificationSettings()
-            await MainActor.run {
-                authorizationStatus = settings.authorizationStatus
+    /// Sends immediate local notifications
+    func sendImmediateNotification(title: String, body: String) {
+        // 1. Check permissions first (Debug Step)
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized else {
+                print("⚠️ Cannot send notification: Permission not authorized. Status: \(settings.authorizationStatus.rawValue)")
+                return
             }
-        }
-    }
-    
-    // MARK: - Schedule Energy Check-In
-    
-    /// Schedules a notification based on the current energy level
-    func scheduleEnergyCheckIn(for energyLevel: EnergyLevel) {
-        print("🔔 [NotificationManager] scheduleEnergyCheckIn called for: \(energyLevel.title)")
-        
-        // Cancel any existing notifications first to avoid duplicates
-        cancelEnergyCheckIn()
-        
-        // 🧪 TEST MODE - Using seconds instead of minutes for easy testing
-        // Change these values back to * 60 for minutes when releasing the app
-        let intervalSeconds: Double
-        switch energyLevel {
-        case .high:
-            intervalSeconds = 10  // 10 seconds (Quick test)
-        case .medium:
-            intervalSeconds = 20  // 20 seconds
-        case .low:
-            intervalSeconds = 30  // 30 seconds
-        }
-        
-        print("⏱️ [NotificationManager] Will fire in \(Int(intervalSeconds)) seconds")
-        
-        // Create notification content
-        let content = UNMutableNotificationContent()
-        content.title = "Time to Check In ⚡️"
-        content.body = "How is your energy level now? Tap to reassess."
-        content.sound = .default
-        content.badge = 1
-        
-        // Add custom data to identify this notification type
-        content.userInfo = [
-            "type": "energyCheckIn",
-            "energyLevel": energyLevel.rawValue
-        ]
-        
-        // Create trigger (time interval in seconds)
-        let trigger = UNTimeIntervalNotificationTrigger(
-            timeInterval: intervalSeconds,
-            repeats: false
-        )
-        
-        // Create request
-        let request = UNNotificationRequest(
-            identifier: energyCheckInIdentifier,
-            content: content,
-            trigger: trigger
-        )
-        
-        // Schedule notification
-        notificationCenter.add(request) { error in
-            if let error = error {
-                print("❌ [NotificationManager] Failed to schedule: \(error)")
-            } else {
-                print("✅ [NotificationManager] Successfully scheduled for \(energyLevel.title) in \(Int(intervalSeconds)) seconds")
-            }
-        }
-    }
-    
-    // MARK: - Cancel Notifications
-    
-    func cancelEnergyCheckIn() {
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: [energyCheckInIdentifier])
-        notificationCenter.removeDeliveredNotifications(withIdentifiers: [energyCheckInIdentifier])
-        print("🗑️ Cancelled energy check-in notifications")
-    }
-    
-    func cancelAllNotifications() {
-        notificationCenter.removeAllPendingNotificationRequests()
-        notificationCenter.removeAllDeliveredNotifications()
-        UIApplication.shared.applicationIconBadgeNumber = 0
-    }
-    
-    // MARK: - Debugging
-    
-    func getPendingNotifications() async -> [UNNotificationRequest] {
-        return await notificationCenter.pendingNotificationRequests()
-    }
-    
-    func printPendingNotifications() {
-        Task {
-            let pending = await getPendingNotifications()
-            if pending.isEmpty {
-                print("📭 No pending notifications")
-            } else {
-                print("📬 Pending notifications:")
-                for request in pending {
-                    if let trigger = request.trigger as? UNTimeIntervalNotificationTrigger {
-                        print("  - \(request.identifier): fires in approx \(Int(trigger.timeInterval)) seconds")
-                    }
+            
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+            
+            // Trigger in 1 second
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("❌ Error scheduling notification: \(error.localizedDescription)")
+                } else {
+                    print("🚀 Notification scheduled: \(title)")
                 }
             }
         }
     }
-}
-
-// MARK: - UNUserNotificationCenterDelegate
-
-extension NotificationManager: UNUserNotificationCenterDelegate {
     
-    // Handle notification when app is in FOREGROUND (so banner still appears)
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        // Show banner, sound, and badge even if app is open
-        completionHandler([.banner, .sound, .badge])
+    func cancelAllNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
     }
     
-    // Handle notification TAP (Click)
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
+    // MARK: - UNUserNotificationCenterDelegate Methods
+    
+    // ✅ This function ensures the notification shows up even if the app is open (Foreground)
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Show Banner and Sound even if app is open
+        completionHandler([.banner, .sound, .list])
+    }
+    
+    // Handle tapping the notification
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        print("👆 User tapped notification")
         
-        // Check if this is our energy check-in notification
-        if let type = userInfo["type"] as? String, type == "energyCheckIn" {
-            print("👆 Notification Tapped! Posting .showEnergySelection event...")
-            
-            // Post notification to SwiftUI to open the Sheet
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(
-                    name: .showEnergySelection,
-                    object: nil
-                )
-            }
-        }
-        
-        // Clear badge
-        UIApplication.shared.applicationIconBadgeNumber = 0
+        // This posts the notification that AppStateViewModel listens for (Part 3)
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         
         completionHandler()
     }
-}
-
-// MARK: - Notification Names
-
-extension Notification.Name {
-    static let showEnergySelection = Notification.Name("showEnergySelection")
 }

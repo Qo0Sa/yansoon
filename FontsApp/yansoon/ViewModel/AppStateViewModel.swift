@@ -59,29 +59,26 @@ final class AppStateViewModel: ObservableObject {
         self.isSetupComplete = storage.isSetupComplete()
 
         setupAutoSave()
-        setupNotificationObserver()
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+        setupNotificationObserver() // ✅
     }
 
     // MARK: - Notification Observer
     private func setupNotificationObserver() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleEnergyCheckInNotification),
-            name: .showEnergySelection,
-            object: nil
-        )
+        NotificationCenter.default.publisher(for: .showEnergySelection)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                print("⚡️ [AppState] Notification received! Opening sheet...")
+                self?.showEnergySelectionPrompt = true
+            }
+            .store(in: &cancellables)
     }
 
-    @objc private func handleEnergyCheckInNotification() {
-        print("⚡️ [AppState] Notification signal received! Opening sheet...")
-        DispatchQueue.main.async { [weak self] in
-            self?.showEnergySelectionPrompt = true
-        }
-    }
+//    @objc private func handleEnergyCheckInNotification() {
+//        print("⚡️ [AppState] Notification signal received! Opening sheet...")
+//        DispatchQueue.main.async { [weak self] in
+//            self?.showEnergySelectionPrompt = true
+//        }
+//    }
 
     // MARK: - Auto Save
     private func setupAutoSave() {
@@ -170,17 +167,24 @@ final class AppStateViewModel: ObservableObject {
             tasks[index].actualMinutes = minutes
         }
     }
+    
+    
+    func markTaskDone(_ taskId: UUID) {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
+        tasks[index].isCompleted = true
+        tasks[index].isTimerRunning = false
+    }
 
+    
+    
     func addCompletedTime(taskId: UUID, minutes: Double) {
         guard minutes > 0 else { return }
         guard let index = tasks.firstIndex(where: { $0.id == taskId }) else { return }
 
         tasks[index].actualMinutes += minutes
 
-        if tasks[index].estimatedMinutes > 0,
-           tasks[index].actualMinutes >= tasks[index].estimatedMinutes {
-            tasks[index].isCompleted = true
-        }
+        // ❌ لا تحكمين هنا إن task اكتملت
+        // ✅ completion يصير فقط من زر Done
     }
 
     // MARK: - Reset

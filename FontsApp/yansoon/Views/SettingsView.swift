@@ -104,10 +104,10 @@ private struct EnergyCard: View {
     }
 
     private var formattedHours: String {
-        let totalMinutes = Int(hours * 60)
+        let totalMinutes = Int((hours * 60).rounded())   // احتياط
         let h = totalMinutes / 60
         let m = totalMinutes % 60
-        return String(format: "%02d:%02d", h, m)
+        return "\(h)h \(m)m"
     }
 
     private func imageName(for level: EnergyLevel) -> String {
@@ -177,16 +177,20 @@ private struct EnergyCard: View {
         let center = sliderSize / 2
         let vector = CGVector(dx: value.location.x - center,
                               dy: value.location.y - center)
-
+        
         let radians = atan2(vector.dy, vector.dx)
         var angle = Double(radians * 180 / .pi) + 90
-
+        
         if angle < 0 { angle += 360 }
-
+        
         let newHours = (angle / 360) * level.maxHours
-        let stepped = (newHours * 2).rounded() / 2
-
-        hours = min(level.maxHours, max(0, stepped))
+        
+        // ✅ Snap كل 5 دقائق
+        let totalMinutes = newHours * 60
+        let steppedMinutes = (totalMinutes / 5).rounded() * 5
+        let steppedHours = steppedMinutes / 60
+        
+        hours = min(level.maxHours, max(0, steppedHours))
         onChange(hours)
     }
 }

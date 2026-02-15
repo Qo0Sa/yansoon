@@ -155,7 +155,9 @@ struct ToDoView: View {
         }
         .sheet(isPresented: $viewModel.showAddTaskSheet) {
             AddTaskSheet(viewModel: viewModel)
+                .environmentObject(appState)
         }
+
         .sheet(isPresented: $viewModel.showModeSelectionSheet) {
             ModeSelectionSheet(viewModel: viewModel, currentMode: appState.currentMode)
         }
@@ -218,6 +220,7 @@ struct AddTaskSheet: View {
     @ObservedObject var viewModel: ToDoViewModel
     @Environment(\.dismiss) var dismiss
     @StateObject private var timeLimitVM = TimeLimitViewModel()
+    @EnvironmentObject var appState: AppStateViewModel
 
     var body: some View {
         NavigationView {
@@ -279,11 +282,16 @@ struct AddTaskSheet: View {
                 }
             }
             .onAppear {
-                // لو تبين تربط slider بالمود الحالي (إذا عندك طريقة)
-                // مثال: timeLimitVM.currentLevel = appState.currentMode   (لو نفس النوع)
+                timeLimitVM.appState = appState
+
+                // ✅ خليه يشتغل على ليفل اليوزر الحالي + يجيب ساعاته
+                timeLimitVM.setLevelToUserMode()
+
+                // قيم افتراضية للـ viewModel (اختياري)
                 viewModel.newTaskHours = 0.0
                 viewModel.newTaskMinutes = 5.0
             }
+
             .onChange(of: timeLimitVM.selectedMinutes) { newValue in
                 viewModel.newTaskHours = Double(Int(newValue) / 60)
                 viewModel.newTaskMinutes = Double(Int(newValue) % 60)
@@ -432,20 +440,12 @@ struct CircularSlidersheet: View {
                 .frame(width: sliderSize, height: sliderSize)
                 .rotationEffect(.degrees(-90))
 
-            // 00:00 display
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(String(format: "%02d", hours))
-                    .font(AppFont.main(size: 60))
-                    .foregroundColor(Color("PrimaryText"))
+            // h m display
+            Text("\(hours)h \(minutes)m")
+                .font(AppFont.main(size: 52))
+                .foregroundColor(Color("PrimaryText"))
+                .monospacedDigit()
 
-                Text(":")
-                    .font(AppFont.main(size: 60))
-                    .foregroundColor(Color("SecondaryText"))
-
-                Text(String(format: "%02d", minutes))
-                    .font(AppFont.main(size: 60))
-                    .foregroundColor(Color("PrimaryText"))
-            }
 
             Circle()
                 .fill(viewModel.isOverAverage ? Color("OffLimit") : Color("ProgressBar"))

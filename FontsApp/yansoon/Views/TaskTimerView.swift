@@ -133,17 +133,28 @@ struct TaskTimerView: View {
     
     // حفظ الوقت المنقضي وإيقاف التايمر
     private func saveAndDismiss() {
+        let elapsedMinutes = calculateElapsedMinutes()
+
+        // ✅ منع Done إذا ما فيه وقت
+        guard elapsedMinutes > 0 else {
+            // Optional: vibration خفيف عشان يعرف إن الزر ما اشتغل
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.warning)
+            return
+        }
+
         vm.done()
         updatePulseIfNeeded()
-        
-        // إضافة الوقت المنقضي للـ progress
-        let elapsedMinutes = calculateElapsedMinutes()
-        if elapsedMinutes > 0 {
-            appState.addCompletedTime(taskId: task.id, minutes: elapsedMinutes)
-        }
-        
+
+        // إضافة الوقت
+        appState.addCompletedTime(taskId: task.id, minutes: elapsedMinutes)
+
+        // ✅ تحديد أن التاسك اكتملت فقط بعد Done
+        appState.markTaskDone(task.id)
+
         dismiss()
     }
+
     
     var body: some View {
         ZStack {

@@ -13,7 +13,8 @@ import SwiftUI
 struct TimeLimitView: View {
     @ObservedObject var viewModel: TimeLimitViewModel
     @EnvironmentObject var appState: AppStateViewModel
-    
+    @Environment(\.dismiss) private var dismiss   // ✅
+
     var body: some View {
         ZStack {
             Color("Background").ignoresSafeArea()
@@ -22,7 +23,7 @@ struct TimeLimitView: View {
                 Spacer()
                 VStack(spacing: 12) {
                     Text("Set your working hours based on energy")
-                        .font(AppFont.main(size: 18))
+                           .font(AppFont.main(size: 18))
                     Text(viewModel.currentLevel.title)
                         .font(AppFont.main(size: 18))
                         .opacity(0.7)
@@ -41,15 +42,15 @@ struct TimeLimitView: View {
                         .foregroundColor(Color("PrimaryButtons"))
                 }
                 
-                Text(viewModel.formattedTime)
-                    .font(AppFont.main(size: 80))
+                Text(viewModel.formattedHoursMinutesText)
+                    .font(AppFont.main(size: 52))
                     .foregroundColor(Color("PrimaryText"))
-                
+
                 Spacer()
                 
                 VStack(spacing: 20) {
                     if viewModel.currentLevel == .low {
-                        // CRITICAL: Navigate to EnergySelectionView on the last step
+                        // CRITICAL: Navigate to EnergySelectionView on the last xstep
                         NavigationLink(destination: EnergySelectionView().environmentObject(appState)) {
                             Text("Next")
                                 .font(AppFont.main(size: 20))
@@ -84,8 +85,11 @@ struct TimeLimitView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(false) // Allow going back to previous energy levels
+                .navigationBarBackButtonHidden(false) // ✅ نخفي الافتراضي
     }
+    
+    
+    
 }
 // MARK: - Refined Slider Component
 struct CircularSliderComponent: View {
@@ -158,11 +162,20 @@ struct CircularSliderComponent: View {
         viewModel.selectedMinutes = min(viewModel.currentLevel.maxHours * 60, max(0, snapped))
     }
 }
-#Preview {
-    let mockVM = TimeLimitViewModel()
-    // You can set it to .medium or .low here to see different versions!
-    mockVM.currentLevel = .high
-    
-    return TimeLimitView(viewModel: mockVM)
-        .preferredColorScheme(.dark)
-}
+
+
+//struct TimeLimitView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        let mockVM = TimeLimitViewModel()
+//        mockVM.currentLevel = .high
+//
+//        let appState = AppStateViewModel()
+//
+//        return NavigationStack {
+//            TimeLimitView(viewModel: mockVM)
+//                .environmentObject(appState)
+//        }
+//        .preferredColorScheme(.dark)
+//    }
+//}
+

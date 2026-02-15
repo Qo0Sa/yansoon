@@ -12,11 +12,12 @@ class StorageManager {
     private let defaults = UserDefaults.standard
     
     private enum Keys {
-        static let energySettings = "energySettings"
-        static let currentMode = "currentMode"
-        static let tasks = "tasks"
-        static let setupComplete = "setupComplete"
+        static let energySettings = "yansoon.energySettings"
+        static let currentMode = "yansoon.currentMode"
+        static let tasks = "yansoon.tasks"
+        static let setupComplete = "yansoon.setupComplete"
     }
+    
     
     func saveEnergySettings(_ settings: EnergySettings) {
         if let encoded = try? JSONEncoder().encode(settings) {
@@ -37,9 +38,11 @@ class StorageManager {
     }
     
     func loadCurrentMode() -> EnergyLevel? {
-        let rawValue = defaults.integer(forKey: Keys.currentMode)
-        return EnergyLevel(rawValue: rawValue)
+        guard defaults.object(forKey: Keys.currentMode) != nil else { return nil }
+        let raw = defaults.integer(forKey: Keys.currentMode)
+        return EnergyLevel(rawValue: raw)
     }
+    
     
     func saveTasks(_ tasks: [TodoTask]) {
         if let encoded = try? JSONEncoder().encode(tasks) {
@@ -69,4 +72,7 @@ class StorageManager {
         defaults.removeObject(forKey: Keys.tasks)
         defaults.removeObject(forKey: Keys.setupComplete)
     }
+    
+    
+    
 }

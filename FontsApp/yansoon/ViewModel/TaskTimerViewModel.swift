@@ -1,8 +1,3 @@
-//
-//  TaskTimerViewModel.swift
-//  yansoon
-//
-
 import Foundation
 import SwiftUI
 import Combine
@@ -19,17 +14,18 @@ final class TaskTimerViewModel: ObservableObject {
     weak var appState: AppStateViewModel?
     private var tickingTask: Task<Void, Never>?
 
-    // ✅ Date-based
+    // Date-based state
     private var startDate: Date?
     private var pauseDate: Date?
     private var totalPausedSeconds: Int = 0
+    private var hasSentStillWorkingNotification: Bool = false
 
-    // ✅ keys
+    // UserDefaults keys
     private var keyPrefix: String { "task_timer_\(taskId.uuidString)" }
     private var startKey: String { "\(keyPrefix)_start" }
     private var pauseKey: String { "\(keyPrefix)_pause" }
     private var pausedSumKey: String { "\(keyPrefix)_pausedSum" }
-    private var stateKey: String { "\(keyPrefix)_state" } // 0 idle, 1 running, 2 paused, 3 finished
+    private var stateKey: String { "\(keyPrefix)_state" }
 
     init(task: TodoTask, appState: AppStateViewModel?) {
         self.taskId = task.id
@@ -44,7 +40,6 @@ final class TaskTimerViewModel: ObservableObject {
         restoreTimerState()
         recalcFromClock()
 
-        // لو كان Running قبل والخلفية وقفتنا، نرجع نحدث UI فقط
         if model.state == .running {
             isRunning = true
             startTickingUIOnly()
@@ -55,19 +50,15 @@ final class TaskTimerViewModel: ObservableObject {
         tickingTask?.cancel()
     }
 
-    // MARK: - Public
     func start() {
         guard model.state != .running else { return }
-
         if startDate == nil {
             startDate = Date()
             totalPausedSeconds = 0
         }
-
         pauseDate = nil
         model.state = .running
         isRunning = true
-
         persistTimerState()
         startTickingUIOnly()
         recalcFromClock()
@@ -76,11 +67,9 @@ final class TaskTimerViewModel: ObservableObject {
 
     func pause() {
         guard model.state == .running else { return }
-
         pauseDate = Date()
         model.state = .paused
         isRunning = false
-
         stopTicking()
         recalcFromClock()
         persistTimerState()
@@ -89,15 +78,12 @@ final class TaskTimerViewModel: ObservableObject {
 
     func resume() {
         guard model.state == .paused else { return }
-
         if let pausedAt = pauseDate {
             totalPausedSeconds += Int(Date().timeIntervalSince(pausedAt))
         }
         pauseDate = nil
-
         model.state = .running
         isRunning = true
-
         persistTimerState()
         startTickingUIOnly()
         recalcFromClock()
@@ -106,14 +92,10 @@ final class TaskTimerViewModel: ObservableObject {
 
     func primaryButtonTapped() {
         switch model.state {
-        case .idle:
-            start()
-        case .running:
-            pause()
-        case .paused:
-            resume()
-        case .finished:
-            break
+        case .idle: start()
+        case .running: pause()
+        case .paused: resume()
+        case .finished: break
         }
     }
 
@@ -122,25 +104,21 @@ final class TaskTimerViewModel: ObservableObject {
         isRunning = false
         recalcFromClock()
         model.state = .finished
-
-        persistProgress()      // ✅ بدون markCompleted
+        persistProgress()
         clearTimerState()
     }
 
-
-    /// ✅ نستخدمها لما يرجع التطبيق foreground أو onAppear
     func syncNow() {
         recalcFromClock()
         persistProgress()
     }
 
-    // MARK: - UI refresh only
     private func startTickingUIOnly() {
         stopTicking()
         tickingTask = Task { [weak self] in
             guard let self else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 1_000_000_000) // تحديث UI
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
                 guard !Task.isCancelled else { break }
                 await MainActor.run {
                     self.recalcFromClock()
@@ -155,19 +133,14 @@ final class TaskTimerViewModel: ObservableObject {
         tickingTask = nil
     }
 
-    // MARK: - Date-based calculation
     private func recalcFromClock() {
         guard let start = startDate else { return }
-
         let totalAllocated = model.totalSeconds
         let now = Date()
-
-        // لو paused نحسب لحد وقت الوقف
         let effectiveNow = (model.state == .paused && pauseDate != nil) ? pauseDate! : now
 
         let elapsedRaw = Int(effectiveNow.timeIntervalSince(start)) - totalPausedSeconds
         let elapsed = max(0, elapsedRaw)
-
         let remaining = totalAllocated - elapsed
 
         if remaining > 0 {
@@ -176,37 +149,44 @@ final class TaskTimerViewModel: ObservableObject {
         } else {
             model.remainingSeconds = 0
             model.overrunSeconds = abs(remaining)
+            
+            // --- Part 2: 1-hour overrun check & Auto-pause 3600---
+            if model.overrunSeconds >= 10 && model.state == .running {
+                pause()
+                if !hasSentStillWorkingNotification {
+                    NotificationManager.shared.sendImmediateNotification(
+                        title: "Are you still working?",
+                        body: "The timer exceeded 1 hour and has been paused."
+                    )
+                    hasSentStillWorkingNotification = true
+                }
+            }
         }
     }
 
-    // MARK: - Persist worked time to AppState (نفس فكرتك)
-    private func persistProgress(markCompleted: Bool = false) {
+    private func persistProgress() {
         guard let appState else { return }
-
-        let workedWithinPlan = model.totalSeconds - max(model.remainingSeconds, 0)
-        let totalWorkedSeconds = max(0, workedWithinPlan) + max(0, model.overrunSeconds)
-        let totalWorkedMinutes = Double(totalWorkedSeconds) / 60.0
-
-        appState.updateTaskActualTime(taskId: taskId, minutes: totalWorkedMinutes)
-
-      
+        let totalWorkedSeconds = (model.totalSeconds - model.remainingSeconds) + model.overrunSeconds
+        appState.updateTaskActualTime(taskId: taskId, minutes: Double(totalWorkedSeconds) / 60.0)
     }
 
-    // MARK: - UserDefaults state
+    // In TaskTimerViewModel.swift
+
     private func persistTimerState() {
         let ud = UserDefaults.standard
         ud.set(startDate, forKey: startKey)
         ud.set(pauseDate, forKey: pauseKey)
         ud.set(totalPausedSeconds, forKey: pausedSumKey)
 
-        let s: Int
+        // Manual mapping instead of rawValue
+        let stateInt: Int
         switch model.state {
-        case .idle: s = 0
-        case .running: s = 1
-        case .paused: s = 2
-        case .finished: s = 3
+        case .idle: stateInt = 0
+        case .running: stateInt = 1
+        case .paused: stateInt = 2
+        case .finished: stateInt = 3
         }
-        ud.set(s, forKey: stateKey)
+        ud.set(stateInt, forKey: stateKey)
     }
 
     private func restoreTimerState() {
@@ -220,15 +200,11 @@ final class TaskTimerViewModel: ObservableObject {
         case 1: model.state = .running
         case 2: model.state = .paused
         case 3: model.state = .finished
-        default: break
+        default: model.state = .idle
         }
     }
-
     private func clearTimerState() {
         let ud = UserDefaults.standard
-        ud.removeObject(forKey: startKey)
-        ud.removeObject(forKey: pauseKey)
-        ud.removeObject(forKey: pausedSumKey)
-        ud.removeObject(forKey: stateKey)
+        [startKey, pauseKey, pausedSumKey, stateKey].forEach { ud.removeObject(forKey: $0) }
     }
 }

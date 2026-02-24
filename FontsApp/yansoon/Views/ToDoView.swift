@@ -271,14 +271,14 @@ struct ToDoView: View {
 }
 
 // MARK: - Helper Function
-private func energyImage(for level: EnergyLevel) -> String {
+private func energyImage(for level: EnergyLevel?) -> String {
     switch level {
     case .high: return "yansoonStatus/high"
     case .medium: return "yansoonStatus/medium"
     case .low: return "yansoonStatus/low"
+    case nil: return "yansoonStatus/medium" // أو حطي default يناسبك
     }
 }
-
 // MARK: - Updated TaskRow with Locked Visuals
 struct TaskRow: View {
     @EnvironmentObject var appState: AppStateViewModel

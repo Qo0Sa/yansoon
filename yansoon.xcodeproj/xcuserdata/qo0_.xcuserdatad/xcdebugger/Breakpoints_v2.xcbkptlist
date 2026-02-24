@@ -18,6 +18,92 @@
             endingLineNumber = "6"
             landmarkName = "unknown"
             landmarkType = "0">
+            <Locations>
+               <Location
+                  uuid = "1F5CE8B4-4870-4A90-A945-403F9161180C - d1c64e9340f5ca1d"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "property wrapper backing initializer of yansoon.TaskTimerViewModel.model : yansoon.TaskTimerModel"
+                  moduleName = "yansoon.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/qo0_/Desktop/ADA/yansoon/FontsApp/yansoon/ViewModel/TaskTimerViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0">
+               </Location>
+               <Location
+                  uuid = "1F5CE8B4-4870-4A90-A945-403F9161180C - dc325a8ba429e09"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "yansoon.TaskTimerViewModel.model.getter : yansoon.TaskTimerModel"
+                  moduleName = "yansoon.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/qo0_/Desktop/ADA/yansoon/FontsApp/yansoon/ViewModel/TaskTimerViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0">
+               </Location>
+               <Location
+                  uuid = "1F5CE8B4-4870-4A90-A945-403F9161180C - dc34cfbfc3196e11"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "yansoon.TaskTimerViewModel.model.setter : yansoon.TaskTimerModel"
+                  moduleName = "yansoon.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/qo0_/Desktop/ADA/yansoon/FontsApp/yansoon/ViewModel/TaskTimerViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0">
+               </Location>
+               <Location
+                  uuid = "1F5CE8B4-4870-4A90-A945-403F9161180C - 56009493b5e603ec"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "yansoon.TaskTimerViewModel.model.modify : yansoon.TaskTimerModel"
+                  moduleName = "yansoon.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/qo0_/Desktop/ADA/yansoon/FontsApp/yansoon/ViewModel/TaskTimerViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "7"
+                  endingLineNumber = "7">
+               </Location>
+               <Location
+                  uuid = "1F5CE8B4-4870-4A90-A945-403F9161180C - eaa2e5b16b5d86f"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "yansoon.TaskTimerViewModel.$model.getter : Combine.Published&lt;yansoon.TaskTimerModel&gt;.Publisher"
+                  moduleName = "yansoon.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/qo0_/Desktop/ADA/yansoon/FontsApp/yansoon/ViewModel/TaskTimerViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "0"
+                  endingLineNumber = "0">
+               </Location>
+               <Location
+                  uuid = "1F5CE8B4-4870-4A90-A945-403F9161180C - b0297af3c2fca560"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "yansoon.TaskTimerViewModel.$model.setter : Combine.Published&lt;yansoon.TaskTimerModel&gt;.Publisher"
+                  moduleName = "yansoon.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/qo0_/Desktop/ADA/yansoon/FontsApp/yansoon/ViewModel/TaskTimerViewModel.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "7"
+                  endingLineNumber = "7">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

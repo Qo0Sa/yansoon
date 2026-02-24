@@ -48,11 +48,7 @@ struct EnergySelectionView: View {
             
             Button(action: {
                 guard let selected = selectionVM.selectedLevel else { return }
-                
-                appState.currentMode = selected
-              
-                print("⏰ Initial Notification Scheduled")
-                appState.completeSetup()
+                selectionVM.proceedToTasks()
                 
             }) {
                 Text("Continue")
@@ -75,19 +71,19 @@ struct EnergySelectionView: View {
         .background(Color("Background").ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
         // 2. ADD THIS TOOLBAR MODIFIER HERE:
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    dismiss() // This takes you back to TimeLimitView (Low Energy)
-                }) {
-                    HStack(spacing: 5) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .foregroundColor(Color("PrimaryButtons"))
-                }
-            }
-        }
+//        .toolbar {
+//            ToolbarItem(placement: .navigationBarLeading) {
+//                Button(action: {
+//                    dismiss() // This takes you back to TimeLimitView (Low Energy)
+//                }) {
+//                    HStack(spacing: 5) {
+//                        Image(systemName: "chevron.left")
+//                        Text("Back")
+//                    }
+//                    .foregroundColor(Color("PrimaryButtons"))
+//                }
+//            }
+//        }
     }
 }
 // MARK: - EnergyButton Component

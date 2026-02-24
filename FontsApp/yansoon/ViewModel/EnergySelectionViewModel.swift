@@ -25,7 +25,7 @@ class EnergySelectionViewModel: ObservableObject {
         
         // Update the current mode in AppState
         appState.switchMode(to: level)
-        
+        appState.completeSetup()    
         // Dismiss the prompt if it was shown
         appState.dismissEnergyPrompt()
         

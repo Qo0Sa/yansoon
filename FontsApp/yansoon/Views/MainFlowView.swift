@@ -18,7 +18,7 @@ struct MainFlowView: View {
         ZStack {
             if !appState.isSetupComplete {
                 NavigationStack {
-                    TimeLimitView(viewModel: timeLimitVM)
+                    EnergySelectionView()
                         .environmentObject(appState)
                 }
                 .transition(.opacity)
@@ -34,8 +34,10 @@ struct MainFlowView: View {
         .onAppear {
             setupViewModels()
             requestNotificationPermissions()
-        }
-    }
+
+            print("isSetupComplete:", appState.isSetupComplete)
+            print("currentMode:", String(describing: appState.currentMode))
+        }    }
     
     private func setupViewModels() {
         timeLimitVM.appState = appState

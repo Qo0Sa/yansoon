@@ -14,7 +14,7 @@ import Combine
 final class AppStateViewModel: ObservableObject {
     
     @Published var energySettings: EnergySettings
-    @Published var currentMode: EnergyLevel
+    @Published var currentMode: EnergyLevel?
     @Published var tasks: [TodoTask]
     @Published var isSetupComplete: Bool
     
@@ -27,7 +27,8 @@ final class AppStateViewModel: ObservableObject {
     
     // MARK: - Computed Properties
     var totalHoursForCurrentMode: Double {
-        energySettings.hours(for: currentMode)
+        guard let mode = currentMode else { return 0 }
+        return energySettings.hours(for: mode)
     }
     
     var totalWorkedMinutes: Double {
@@ -60,12 +61,15 @@ final class AppStateViewModel: ObservableObject {
     // MARK: - Init
     init() {
         let storage = StorageManager.shared
+        
         self.energySettings = storage.loadEnergySettings()
-        self.currentMode = storage.loadCurrentMode() ?? .high
+        self.currentMode = storage.loadCurrentMode()
         self.tasks = storage.loadTasks()
         self.isSetupComplete = storage.isSetupComplete()
         
-        setupAutoSave()
+        defer {
+            setupAutoSave()
+        }
     }
     
     // MARK: - Auto Save Logic
@@ -78,7 +82,13 @@ final class AppStateViewModel: ObservableObject {
         
         $currentMode
             .dropFirst()
-            .sink { StorageManager.shared.saveCurrentMode($0) }
+            .sink { mode in
+                if let mode {
+                    StorageManager.shared.saveCurrentMode(mode)
+                } else {
+                    StorageManager.shared.clearCurrentMode()
+                }
+            }
             .store(in: &cancellables)
         
         $tasks
@@ -103,10 +113,10 @@ final class AppStateViewModel: ObservableObject {
     }
     
     func switchMode(to newMode: EnergyLevel) {
-        guard newMode != currentMode else { return }
-        currentMode = newMode
-        resetAllTaskProgress()
-        // Note: Manual scheduling removed to favor Part 3 reactive logic.
+        if currentMode != newMode {
+            currentMode = newMode
+            resetAllTaskProgress()
+        }
     }
     
     private func resetAllTaskProgress() {
@@ -181,7 +191,7 @@ final class AppStateViewModel: ObservableObject {
     func resetApp() {
         StorageManager.shared.clearAll()
         energySettings = .default
-        currentMode = .high
+        currentMode = nil
         tasks = []
         isSetupComplete = false
         notificationManager.cancelAllNotifications()

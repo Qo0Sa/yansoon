@@ -74,5 +74,7 @@ class StorageManager {
     }
     
     
-    
+    func clearCurrentMode() {
+        defaults.removeObject(forKey: Keys.currentMode)
+    }
 }

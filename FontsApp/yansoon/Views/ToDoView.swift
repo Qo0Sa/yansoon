@@ -414,6 +414,8 @@ struct AddTaskSheet: View {
                 Color("Background").ignoresSafeArea()
 
                 VStack(spacing: 25) {
+
+                    // Task Name
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Task Name")
                             .font(AppFont.main(size: 16))
@@ -429,6 +431,7 @@ struct AddTaskSheet: View {
                             )
                     }
 
+                    // Estimated Time
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Estimated Time")
                             .font(AppFont.main(size: 16))
@@ -439,23 +442,6 @@ struct AddTaskSheet: View {
                     }
 
                     Spacer()
-
-                    Button(action: {
-                        viewModel.addTask()
-                        dismiss()
-                    }) {
-                        Text("Add Task")
-                            .font(AppFont.main(size: 18))
-                            .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color("PrimaryButtons"))
-                            .cornerRadius(12)
-                    }
-                    .disabled(
-                        viewModel.newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                        timeLimitVM.selectedMinutes < 5
-                    )
                 }
                 .padding(25)
             }
@@ -467,19 +453,44 @@ struct AddTaskSheet: View {
                         .foregroundColor(Color("PrimaryButtons"))
                 }
             }
-            .ignoresSafeArea(.keyboard, edges: .bottom)
+
+            // 🔥 This is the only structural improvement
+            .safeAreaInset(edge: .bottom) {
+                Button(action: {
+                    viewModel.addTask()
+                    dismiss()
+                }) {
+                    Text("Add Task")
+                        .font(AppFont.main(size: 18))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color("PrimaryButtons"))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 25)
+                        .padding(.bottom, 10)
+                }
+                .disabled(
+                    viewModel.newTaskTitle
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .isEmpty ||
+                    timeLimitVM.selectedMinutes < 5
+                )
+                .background(Color("Background"))
+            }
 
             .onAppear {
                 viewModel.newTaskHours = 0.0
                 viewModel.newTaskMinutes = 5.0
             }
+
             .onChange(of: timeLimitVM.selectedMinutes) { newValue in
                 viewModel.newTaskHours = Double(Int(newValue) / 60)
                 viewModel.newTaskMinutes = Double(Int(newValue) % 60)
             }
         }
     }
-}
+    }
 
 // MARK: - Energy Check-In Sheet
 struct EnergyCheckInSheet: View {

@@ -525,6 +525,8 @@ struct AddTaskSheet: View {
                         .foregroundColor(Color("PrimaryButtons"))
                 }
             }
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+
             .onAppear {
                 viewModel.newTaskHours = 0.0
                 viewModel.newTaskMinutes = 5.0

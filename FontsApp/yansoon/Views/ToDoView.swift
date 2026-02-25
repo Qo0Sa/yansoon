@@ -1,10 +1,10 @@
-
 //
 //  ToDoView.swift
 //  yansoon
 //
 
 import SwiftUI
+import TipKit
 
 struct ToDoView: View {
     @EnvironmentObject var appState: AppStateViewModel
@@ -13,16 +13,14 @@ struct ToDoView: View {
     @State private var selectedTask: TodoTask? = nil
     @State private var navigateToTimer = false
     
-    // State for Editing
     @State private var editingTask: TodoTask? = nil
     @State private var showEditTaskSheet = false
-    
-    // State for Burnout Alert
     @State private var showBurnoutAlert = false
     
     @Environment(\.dismiss) private var dismiss
-
-    // Helper to check achievement state
+    @State private var showSettingsTip = true
+    @State private var gearFrame: CGRect = .zero  // ← لحفظ موقع الـ gear icon
+    
     private var isShowingAchievement: Bool {
         !appState.tasks.isEmpty && appState.tasks.allSatisfy({ $0.isCompleted })
     }
@@ -42,12 +40,18 @@ struct ToDoView: View {
                         Spacer()
 
                         NavigationLink {
-                            SettingsView()
-                                .environmentObject(appState)
+                            SettingsView().environmentObject(appState)
                         } label: {
                             Image(systemName: "gearshape.fill")
                                 .foregroundColor(Color("PrimaryButtons"))
                                 .font(.system(size: 25, weight: .semibold))
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.onAppear {
+                                            gearFrame = geo.frame(in: .global)
+                                        }
+                                    }
+                                )
                         }
                     }
                     .padding(.horizontal, 25)
@@ -88,18 +92,7 @@ struct ToDoView: View {
                     .padding(.horizontal, 25)
                     .padding(.top, 20)
                     .padding(.bottom, 15)
-////debuuger
-//                    Button("DEBUG: Fill Energy") {
-//                        if let firstTask = appState.tasks.first {
-//                            // Add 10 hours of work instantly
-//                            appState.addCompletedTime(taskId: firstTask.id, minutes: 600)
-//                        }
-//                    }
-//                    .padding()
-//                    .background(Color.red.opacity(0.2))
-//                    .cornerRadius(10)
-                    //debugger
-                    
+
                     // Tasks List
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Tasks")
@@ -110,16 +103,12 @@ struct ToDoView: View {
                         List {
                             if appState.tasks.isEmpty {
                                 emptyStateView
-                            }
-                            else if isShowingAchievement {
+                            } else if isShowingAchievement {
                                 achievementView
-                            }
-                            else {
+                            } else {
                                 ForEach(appState.tasks) { task in
-                                    // Modified Row Logic for Locked State
                                     TaskRow(task: task) {
                                         if appState.progress >= 1.0 && !task.isCompleted {
-                                            // Trigger pop-up if energy is full and task isn't done
                                             showBurnoutAlert = true
                                         } else {
                                             selectedTask = task
@@ -129,7 +118,6 @@ struct ToDoView: View {
                                     .listRowBackground(Color.clear)
                                     .listRowSeparator(.hidden)
                                     .listRowInsets(EdgeInsets(top: 6, leading: 25, bottom: 6, trailing: 25))
-                                    // Visual grayish/locked effect
                                     .opacity(appState.progress >= 1.0 && !task.isCompleted ? 0.5 : 1.0)
                                     .grayscale(appState.progress >= 1.0 && !task.isCompleted ? 1.0 : 0.0)
                                     .swipeActions(edge: .leading) {
@@ -158,7 +146,7 @@ struct ToDoView: View {
                     }
                     .frame(maxHeight: .infinity)
 
-                    // Add Button - HIDDEN when achievement is showing
+                    // Add Button
                     if !isShowingAchievement {
                         Button(action: {
                             viewModel.showAddTaskSheet = true
@@ -178,6 +166,70 @@ struct ToDoView: View {
                 }
             }
 
+            // ← Spotlight overlay - كل شي يغبش إلا الـ gear icon
+            if showSettingsTip {
+                Color.black.opacity(0.55)
+                    .ignoresSafeArea()
+                    .mask(
+                        Rectangle()
+                            .overlay(
+                                Circle()
+                                    .frame(width: 70, height: 70)
+                                    .position(x: gearFrame.midX, y: gearFrame.midY)
+                                    .blendMode(.destinationOut)
+                            )
+                            .compositingGroup()
+                    )
+                    .ignoresSafeArea()
+                    .zIndex(998)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.3), value: showSettingsTip)
+            }
+
+            // ← Tip فوق كل شي
+            if showSettingsTip {
+                VStack {
+                    HStack {
+                        Spacer()
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "lightbulb.fill")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(.yellow)
+                                Text("Tip")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(Color("SecondaryText"))
+                            }
+                            Text("Adjust your energy limits and preferences here.")
+                                .font(AppFont.main(size: 15))
+                                .foregroundColor(Color("PrimaryText"))
+                                .fixedSize(horizontal: false, vertical: true)
+                                .lineLimit(3)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .frame(width: 180, alignment: .leading)
+                        .background {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(.ultraThinMaterial)
+                                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        }
+                        .padding(.trailing, 20)
+                    }
+                    .padding(.top, 70)
+                    Spacer()
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .topTrailing)))
+                .animation(.spring(response: 0.9, dampingFraction: 0.7), value: showSettingsTip)
+                .zIndex(999)
+                .allowsHitTesting(false)
+            }
+
             // Invisible NavigationLink
             NavigationLink(isActive: $navigateToTimer) {
                 if let task = selectedTask {
@@ -187,11 +239,8 @@ struct ToDoView: View {
                 }
             } label: { EmptyView() }.hidden()
         }
-        // --- Part 3 Logic Integrated Here ---
         .alert("Are you done working?", isPresented: $appState.showPostTaskPopUp) {
-            Button("Yes") {
-                appState.showEnergySelectionPrompt = true
-            }
+            Button("Yes") { appState.showEnergySelectionPrompt = true }
             Button("No", role: .cancel) { }
         } message: {
             Text("To help track your burnout, please check in on your energy levels.")
@@ -199,7 +248,6 @@ struct ToDoView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             appState.handleReturnToApp()
         }
-        // -------------------------------------
         .onAppear { viewModel.appState = appState }
         .sheet(isPresented: $viewModel.showAddTaskSheet) {
             AddTaskSheet(viewModel: viewModel)
@@ -210,13 +258,19 @@ struct ToDoView: View {
         .sheet(isPresented: $appState.showEnergySelectionPrompt) {
             EnergyCheckInSheet().environmentObject(appState)
         }
-        // Burnout Pop-up
         .alert("Energy Limit Reached", isPresented: $showBurnoutAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Your energy cannot handle more tasks, you will burn out.")
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            viewModel.appState = appState
+            showSettingsTip = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                withAnimation { showSettingsTip = false }
+            }
+        }
     }
 
     private var emptyStateView: some View {
@@ -270,16 +324,22 @@ struct ToDoView: View {
     }
 }
 
+struct SettingsTip: Tip {
+    var title: Text { Text("Settings") }
+    var message: Text? { Text("Adjust your energy limits and preferences here.") }
+}
+
 // MARK: - Helper Function
 private func energyImage(for level: EnergyLevel?) -> String {
     switch level {
     case .high: return "yansoonStatus/high"
     case .medium: return "yansoonStatus/medium"
     case .low: return "yansoonStatus/low"
-    case nil: return "yansoonStatus/medium" // أو حطي default يناسبك
+    case nil: return "yansoonStatus/medium"
     }
 }
-// MARK: - Updated TaskRow with Locked Visuals
+
+// MARK: - TaskRow
 struct TaskRow: View {
     @EnvironmentObject var appState: AppStateViewModel
     let task: TodoTask
@@ -293,7 +353,6 @@ struct TaskRow: View {
                         .foregroundColor(Color("PrimaryButtons"))
                         .frame(width: 20, height: 20)
                 } else {
-                    // Show lock if energy is full and task is incomplete
                     Image(systemName: appState.progress >= 1.0 ? "lock.fill" : "circle")
                         .foregroundColor(appState.progress >= 1.0 ? Color("OffLimit") : Color("PrimaryButtons"))
                         .font(.system(size: 19))
@@ -315,7 +374,6 @@ struct TaskRow: View {
                 RoundedRectangle(cornerRadius: 15)
                     .fill(Color("TaskBox"))
             )
-            // Visual border cue for locked tasks
             .overlay(
                 RoundedRectangle(cornerRadius: 15)
                     .stroke(Color("OffLimit").opacity(appState.progress >= 1.0 && !task.isCompleted ? 0.3 : 0), lineWidth: 1)
@@ -560,7 +618,7 @@ struct EnergyCheckInSheet: View {
     }
 }
 
-// MARK: - Circular Slider (00:00)
+// MARK: - Circular Slider
 struct CircularSlidersheet: View {
     @ObservedObject var viewModel: TimeLimitViewModel
 

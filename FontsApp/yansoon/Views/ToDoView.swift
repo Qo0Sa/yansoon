@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import TipKit
 
 struct ToDoView: View {
     @EnvironmentObject var appState: AppStateViewModel
@@ -266,9 +265,16 @@ struct ToDoView: View {
         .navigationBarBackButtonHidden(true)
         .onAppear {
             viewModel.appState = appState
-            showSettingsTip = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-                withAnimation { showSettingsTip = false }
+
+            if !StorageManager.shared.didShowSettingsTip() {
+                showSettingsTip = true
+                StorageManager.shared.setDidShowSettingsTip()
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    withAnimation { showSettingsTip = false }
+                }
+            } else {
+                showSettingsTip = false
             }
         }
     }
@@ -324,10 +330,10 @@ struct ToDoView: View {
     }
 }
 
-struct SettingsTip: Tip {
-    var title: Text { Text("Settings") }
-    var message: Text? { Text("Adjust your energy limits and preferences here.") }
-}
+//struct SettingsTip: Tip {
+//    var title: Text { Text("Settings") }
+//    var message: Text? { Text("Adjust your energy limits and preferences here.") }
+//}
 
 // MARK: - Helper Function
 private func energyImage(for level: EnergyLevel?) -> String {

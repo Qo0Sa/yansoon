@@ -11,11 +11,15 @@ class StorageManager {
     static let shared = StorageManager()
     private let defaults = UserDefaults.standard
     
+    
     private enum Keys {
         static let energySettings = "yansoon.energySettings"
         static let currentMode = "yansoon.currentMode"
         static let tasks = "yansoon.tasks"
         static let setupComplete = "yansoon.setupComplete"
+        //tip
+        static let didShowSettingsTip = "yansoon.didShowSettingsTip"
+
     }
     
     
@@ -77,4 +81,14 @@ class StorageManager {
     func clearCurrentMode() {
         defaults.removeObject(forKey: Keys.currentMode)
     }
+    
+    //tip
+    func setDidShowSettingsTip() {
+        defaults.set(true, forKey: Keys.didShowSettingsTip)
+    }
+
+    func didShowSettingsTip() -> Bool {
+        defaults.bool(forKey: Keys.didShowSettingsTip)
+    }
+    
 }

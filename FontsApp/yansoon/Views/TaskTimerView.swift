@@ -83,12 +83,16 @@ struct TaskTimerView: View {
         appState.addCompletedTime(taskId: task.id, minutes: elapsedMinutes)
         appState.markTaskDone(task.id)
 
-        // --- Part 3: Send "Are you done?" signal ---
-        UserDefaults.standard.set(true, forKey: "pending_done_check")
-        NotificationManager.shared.sendImmediateNotification(
-            title: "Task Finished!",
-            body: "Are you done working? Open Yansoon to check in."
-        )
+        // --- Part 3: Show pop-up directly if in app, otherwise send notification ---
+        if UIApplication.shared.applicationState == .active {
+            appState.showPostTaskPopUp = true
+        } else {
+            UserDefaults.standard.set(true, forKey: "pending_done_check")
+            NotificationManager.shared.sendImmediateNotification(
+                title: "Task Finished!",
+                body: "Are you done working? Open Yansoon to check in."
+            )
+        }
 
         dismiss()
     }

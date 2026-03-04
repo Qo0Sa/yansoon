@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Combine
 import UserNotifications
+import ActivityKit
 
 @MainActor
 final class TaskTimerViewModel: ObservableObject {
@@ -15,6 +16,9 @@ final class TaskTimerViewModel: ObservableObject {
 
     weak var appState: AppStateViewModel?
     private var tickingTask: Task<Void, Never>?
+
+    // Live Activity
+    private var liveActivity: Activity<YansoonActivityAttributes>?
 
     // Date-based state
     private var startDate: Date?
@@ -104,6 +108,7 @@ final class TaskTimerViewModel: ObservableObject {
         startTickingUIOnly()
         recalcFromClock()
         persistProgress()
+        startLiveActivity()
     }
 
     func pause() {
@@ -117,6 +122,7 @@ final class TaskTimerViewModel: ObservableObject {
         persistProgress()
         // Cancel pre-scheduled overrun notification when user manually pauses
         cancelOverrunNotification()
+        updateLiveActivity()
     }
 
     func resume() {
@@ -136,6 +142,7 @@ final class TaskTimerViewModel: ObservableObject {
         if !hasHandledOverrun {
             scheduleOverrunNotificationIfNeeded()
         }
+        updateLiveActivity()
     }
 
     func primaryButtonTapped() {
@@ -155,6 +162,7 @@ final class TaskTimerViewModel: ObservableObject {
         persistProgress()
         clearTimerState()
         cancelOverrunNotification()
+        endLiveActivity()
     }
 
     func syncNow() {
@@ -208,8 +216,70 @@ final class TaskTimerViewModel: ObservableObject {
                     showTimeExceededAlert = true
                 }
                 // If out-of-app: notification was already pre-scheduled when app backgrounded
+                updateLiveActivity()
             }
         }
+    }
+
+    // MARK: - Live Activity
+
+    /// Starts the Live Activity when the timer begins.
+    private func startLiveActivity() {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        guard liveActivity == nil else { return }
+
+        let attributes = YansoonActivityAttributes(
+            taskTitle: taskTitle,
+            estimatedSeconds: model.totalSeconds
+        )
+        let state = makeContentState()
+
+        do {
+            liveActivity = try Activity.request(
+                attributes: attributes,
+                content: .init(state: state, staleDate: nil),
+                pushType: nil
+            )
+        } catch {
+            print("⚠️ Live Activity failed to start: \(error.localizedDescription)")
+        }
+    }
+
+    /// Pushes updated state to the Live Activity.
+    private func updateLiveActivity() {
+        guard let activity = liveActivity else { return }
+        let state = makeContentState()
+        Task {
+            await activity.update(.init(state: state, staleDate: nil))
+        }
+    }
+
+    /// Ends and dismisses the Live Activity.
+    private func endLiveActivity() {
+        guard let activity = liveActivity else { return }
+        let state = makeContentState()
+        Task {
+            await activity.end(.init(state: state, staleDate: nil), dismissalPolicy: .after(.now + 4))
+        }
+        liveActivity = nil
+    }
+
+    /// Builds the current ContentState from live timer values.
+    private func makeContentState() -> YansoonActivityAttributes.ContentState {
+        let elapsed = (model.totalSeconds - model.remainingSeconds) + model.overrunSeconds
+        // Virtual start date = now minus elapsed, so Text(.timer) ticks correctly without updates
+        let virtualStart = Date().addingTimeInterval(-Double(elapsed))
+        // Exact expiry = virtual start + total estimated seconds
+        let expiry = virtualStart.addingTimeInterval(Double(model.totalSeconds))
+
+        return YansoonActivityAttributes.ContentState(
+            timerStartDate: virtualStart,
+            elapsedSeconds: elapsed,
+            isPaused: model.state == .paused,
+            isOverrun: model.overrunSeconds > 0,
+            progress: min(Double(elapsed) / Double(max(model.totalSeconds, 1)), 1.0),
+            expiryDate: expiry
+        )
     }
 
     /// Pre-schedules overrun notification for exactly when estimated time expires.

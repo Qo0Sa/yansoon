@@ -7,18 +7,66 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		125B6CD62F58E2F000B53130 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 125B6CD52F58E2F000B53130 /* WidgetKit.framework */; };
+		125B6CD82F58E2F000B53130 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 125B6CD72F58E2F000B53130 /* SwiftUI.framework */; };
+		125B6CE52F58E2F100B53130 /* YansoonWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 125B6CD32F58E2F000B53130 /* YansoonWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FDDC33BB2F3371E20021D586 /* TheYearofTheCamel-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = FDDC33BA2F3371E20021D586 /* TheYearofTheCamel-Bold.otf */; };
 		FDDC33BD2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = FDDC33BC2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		125B6CE32F58E2F100B53130 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 36E1D6182F2F92BA0012AF65 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 125B6CD22F58E2F000B53130;
+			remoteInfo = YansoonWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		125B6CE62F58E2F100B53130 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				125B6CE52F58E2F100B53130 /* YansoonWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		125B6CD32F58E2F000B53130 /* YansoonWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = YansoonWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		125B6CD52F58E2F000B53130 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		125B6CD72F58E2F000B53130 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		36E1D6202F2F92BA0012AF65 /* yansoon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = yansoon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FDDC33BA2F3371E20021D586 /* TheYearofTheCamel-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "TheYearofTheCamel-Bold.otf"; sourceTree = "<group>"; };
 		FDDC33BC2F3371EF0021D586 /* TheYearofHandicrafts-Bold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "TheYearofHandicrafts-Bold.otf"; sourceTree = "<group>"; };
 		FDDC33BE2F33735E0021D586 /* yansoon-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "yansoon-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		125B6CE92F58E2F100B53130 /* Exceptions for "YansoonWidget" folder in "YansoonWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 125B6CD22F58E2F000B53130 /* YansoonWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		125B6CD92F58E2F000B53130 /* YansoonWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				125B6CE92F58E2F100B53130 /* Exceptions for "YansoonWidget" folder in "YansoonWidgetExtension" target */,
+			);
+			path = YansoonWidget;
+			sourceTree = "<group>";
+		};
 		36E1D6222F2F92BA0012AF65 /* yansoon */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = yansoon;
@@ -27,6 +75,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		125B6CD02F58E2F000B53130 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				125B6CD82F58E2F000B53130 /* SwiftUI.framework in Frameworks */,
+				125B6CD62F58E2F000B53130 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		36E1D61D2F2F92BA0012AF65 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -37,11 +94,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		125B6CD42F58E2F000B53130 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				125B6CD52F58E2F000B53130 /* WidgetKit.framework */,
+				125B6CD72F58E2F000B53130 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		36E1D6172F2F92BA0012AF65 = {
 			isa = PBXGroup;
 			children = (
 				FDDC33BE2F33735E0021D586 /* yansoon-Info.plist */,
 				FDDC33B92F3371BF0021D586 /* FontsApp */,
+				125B6CD92F58E2F000B53130 /* YansoonWidget */,
+				125B6CD42F58E2F000B53130 /* Frameworks */,
 				36E1D6212F2F92BA0012AF65 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				36E1D6202F2F92BA0012AF65 /* yansoon.app */,
+				125B6CD32F58E2F000B53130 /* YansoonWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,6 +136,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		125B6CD22F58E2F000B53130 /* YansoonWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 125B6CEA2F58E2F100B53130 /* Build configuration list for PBXNativeTarget "YansoonWidgetExtension" */;
+			buildPhases = (
+				125B6CCF2F58E2F000B53130 /* Sources */,
+				125B6CD02F58E2F000B53130 /* Frameworks */,
+				125B6CD12F58E2F000B53130 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				125B6CD92F58E2F000B53130 /* YansoonWidget */,
+			);
+			name = YansoonWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = YansoonWidgetExtension;
+			productReference = 125B6CD32F58E2F000B53130 /* YansoonWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		36E1D61F2F2F92BA0012AF65 /* yansoon */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 36E1D62B2F2F92BB0012AF65 /* Build configuration list for PBXNativeTarget "yansoon" */;
@@ -74,10 +165,12 @@
 				36E1D61C2F2F92BA0012AF65 /* Sources */,
 				36E1D61D2F2F92BA0012AF65 /* Frameworks */,
 				36E1D61E2F2F92BA0012AF65 /* Resources */,
+				125B6CE62F58E2F100B53130 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				125B6CE42F58E2F100B53130 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				36E1D6222F2F92BA0012AF65 /* yansoon */,
@@ -99,6 +192,9 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					125B6CD22F58E2F000B53130 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
 					36E1D61F2F2F92BA0012AF65 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -119,11 +215,19 @@
 			projectRoot = "";
 			targets = (
 				36E1D61F2F2F92BA0012AF65 /* yansoon */,
+				125B6CD22F58E2F000B53130 /* YansoonWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		125B6CD12F58E2F000B53130 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		36E1D61E2F2F92BA0012AF65 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -136,6 +240,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		125B6CCF2F58E2F000B53130 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		36E1D61C2F2F92BA0012AF65 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -145,7 +256,75 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		125B6CE42F58E2F100B53130 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 125B6CD22F58E2F000B53130 /* YansoonWidgetExtension */;
+			targetProxy = 125B6CE32F58E2F100B53130 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		125B6CE72F58E2F100B53130 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9R2M6F3W3D;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YansoonWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YansoonWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alwated.yansoon.YansoonWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		125B6CE82F58E2F100B53130 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9R2M6F3W3D;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = YansoonWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = YansoonWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alwated.yansoon.YansoonWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		36E1D6292F2F92BB0012AF65 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -334,6 +513,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		125B6CEA2F58E2F100B53130 /* Build configuration list for PBXNativeTarget "YansoonWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				125B6CE72F58E2F100B53130 /* Debug */,
+				125B6CE82F58E2F100B53130 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		36E1D61B2F2F92BA0012AF65 /* Build configuration list for PBXProject "yansoon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

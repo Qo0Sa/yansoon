@@ -120,9 +120,11 @@ final class AppStateViewModel: ObservableObject {
     }
     
     private func resetAllTaskProgress() {
+        // Remove completed tasks — they're done, don't bring them back on energy switch
+        tasks.removeAll(where: { $0.isCompleted })
+        // Reset progress on remaining incomplete tasks
         for index in tasks.indices {
             tasks[index].actualMinutes = 0.0
-            tasks[index].isCompleted = false
         }
     }
     

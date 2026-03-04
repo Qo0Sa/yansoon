@@ -1,11 +1,13 @@
 import Foundation
 import SwiftUI
 import Combine
+import UserNotifications
 
 @MainActor
 final class TaskTimerViewModel: ObservableObject {
     @Published private(set) var model: TaskTimerModel
     @Published private(set) var isRunning: Bool = false
+    @Published var showTimeExceededAlert: Bool = false
 
     let taskId: UUID
     let taskTitle: String
@@ -18,7 +20,12 @@ final class TaskTimerViewModel: ObservableObject {
     private var startDate: Date?
     private var pauseDate: Date?
     private var totalPausedSeconds: Int = 0
-    private var hasSentStillWorkingNotification: Bool = false
+    private var hasHandledOverrun: Bool = false
+
+    // Reliable foreground tracking via NotificationCenter
+    private var isAppInForeground: Bool = true
+    private var foregroundObserver: NSObjectProtocol?
+    private var backgroundObserver: NSObjectProtocol?
 
     // UserDefaults keys
     private var keyPrefix: String { "task_timer_\(taskId.uuidString)" }
@@ -44,10 +51,44 @@ final class TaskTimerViewModel: ObservableObject {
             isRunning = true
             startTickingUIOnly()
         }
+
+        // Track foreground/background reliably
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.isAppInForeground = true
+            // Cancel the overrun notification that was sent while in background
+            // so it doesn't pop up as a banner now that user is back in the app
+            // Cancel pre-scheduled overrun notification — we'll handle it in-app instead
+            UNUserNotificationCenter.current().removePendingNotificationRequests(
+                withIdentifiers: ["overrun-\(self.taskId.uuidString)"]
+            )
+            UNUserNotificationCenter.current().removeDeliveredNotifications(
+                withIdentifiers: ["overrun-\(self.taskId.uuidString)"]
+            )
+            // If overrun happened while away, show the in-app alert now
+            if self.hasHandledOverrun && self.model.state == .paused {
+                self.showTimeExceededAlert = true
+            }
+        }
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.isAppInForeground = false
+            // Pre-schedule overrun notification for exact expiry time so iOS
+            // delivers it even while the app is fully suspended
+            self.scheduleOverrunNotificationIfNeeded()
+        }
     }
 
     deinit {
         tickingTask?.cancel()
+        if let obs = foregroundObserver { NotificationCenter.default.removeObserver(obs) }
+        if let obs = backgroundObserver { NotificationCenter.default.removeObserver(obs) }
     }
 
     func start() {
@@ -74,6 +115,8 @@ final class TaskTimerViewModel: ObservableObject {
         recalcFromClock()
         persistTimerState()
         persistProgress()
+        // Cancel pre-scheduled overrun notification when user manually pauses
+        cancelOverrunNotification()
     }
 
     func resume() {
@@ -88,6 +131,11 @@ final class TaskTimerViewModel: ObservableObject {
         startTickingUIOnly()
         recalcFromClock()
         persistProgress()
+        // After the overrun was handled, hasHandledOverrun stays true so no re-notification
+        // But if user resumed before overrun, refresh the pre-scheduled notification timing
+        if !hasHandledOverrun {
+            scheduleOverrunNotificationIfNeeded()
+        }
     }
 
     func primaryButtonTapped() {
@@ -106,6 +154,7 @@ final class TaskTimerViewModel: ObservableObject {
         model.state = .finished
         persistProgress()
         clearTimerState()
+        cancelOverrunNotification()
     }
 
     func syncNow() {
@@ -150,18 +199,47 @@ final class TaskTimerViewModel: ObservableObject {
             model.remainingSeconds = 0
             model.overrunSeconds = abs(remaining)
             
-            // --- Part 2: 1-hour overrun check & Auto-pause 3600---
-            if model.overrunSeconds >= 10 && model.state == .running {
+            // Auto-pause on overrun — only once, guarded so resume works freely after
+            if model.overrunSeconds >= 10 && model.state == .running && !hasHandledOverrun {
+                hasHandledOverrun = true
                 pause()
-                if !hasSentStillWorkingNotification {
-                    NotificationManager.shared.sendImmediateNotification(
-                        title: "Are you still working?",
-                        body: "The timer exceeded 1 hour and has been paused."
-                    )
-                    hasSentStillWorkingNotification = true
+                if isAppInForeground {
+                    // In-app → show alert directly in TaskTimerView
+                    showTimeExceededAlert = true
                 }
+                // If out-of-app: notification was already pre-scheduled when app backgrounded
             }
         }
+    }
+
+    /// Pre-schedules overrun notification for exactly when estimated time expires.
+    /// iOS delivers this even when the app is fully suspended.
+    private func scheduleOverrunNotificationIfNeeded() {
+        guard let start = startDate,
+              model.state == .running,
+              !hasHandledOverrun else { return }
+
+        let expiryDate = start.addingTimeInterval(Double(model.totalSeconds + totalPausedSeconds))
+        let secondsUntilExpiry = expiryDate.timeIntervalSinceNow
+
+        guard secondsUntilExpiry > 0 else { return }
+
+        cancelOverrunNotification() // remove any stale one first
+
+        let identifier = "overrun-\(taskId.uuidString)"
+        let content = UNMutableNotificationContent()
+        content.title = "Time Exceeded!"
+        content.body = "Your task timer has been paused. Open Yansoon to continue."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: secondsUntilExpiry, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    private func cancelOverrunNotification() {
+        let identifier = "overrun-\(taskId.uuidString)"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
     }
 
     private func persistProgress() {

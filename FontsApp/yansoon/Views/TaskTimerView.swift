@@ -205,6 +205,19 @@ struct TaskTimerView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             vm.syncNow()
         }
+        .alert("Time Exceeded!", isPresented: $vm.showTimeExceededAlert) {
+            Button("Resume") { vm.resume() }
+            Button("Stop", role: .destructive) {
+                vm.done()
+                let elapsed = calculateElapsedMinutes()
+                appState.addCompletedTime(taskId: task.id, minutes: elapsed)
+                appState.markTaskDone(task.id)
+                appState.showPostTaskPopUp = true
+                dismiss()
+            }
+        } message: {
+            Text("Your estimated time has been exceeded. The timer has been paused.")
+        }
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {

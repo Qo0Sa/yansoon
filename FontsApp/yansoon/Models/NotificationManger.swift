@@ -1,4 +1,3 @@
-
 //
 //  NotificationManager.swift
 //  yansoon
@@ -57,6 +56,28 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
     
+    /// Sends the overrun notification with a fixed identifier so it can be cancelled on foreground return
+    func sendOverrunNotification(taskId: String) {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized else { return }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Time Exceeded!"
+            content.body = "Your task timer has been paused. Open Yansoon to continue."
+            content.sound = .default
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            let identifier = "overrun-\(taskId)"
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("❌ Error scheduling overrun notification: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
     func cancelAllNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()

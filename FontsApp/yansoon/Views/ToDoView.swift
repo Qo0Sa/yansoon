@@ -266,6 +266,10 @@ struct ToDoView: View {
         .onAppear {
             viewModel.appState = appState
 
+            Task {
+                let _ = await appState.requestNotificationPermission()
+            }
+
             if !StorageManager.shared.didShowSettingsTip() {
                 showSettingsTip = true
                 StorageManager.shared.setDidShowSettingsTip()

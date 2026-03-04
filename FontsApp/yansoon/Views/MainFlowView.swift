@@ -55,7 +55,6 @@ struct MainFlowView: View {
         .animation(.spring(), value: appState.isSetupComplete)
         .onAppear {
             setupViewModels()
-            requestNotificationPermissions()
 
             print("isSetupComplete:", appState.isSetupComplete)
             print("currentMode:", String(describing: appState.currentMode))
@@ -65,11 +64,5 @@ struct MainFlowView: View {
     private func setupViewModels() {
         timeLimitVM.appState = appState
         todoVM.appState = appState
-    }
-    
-    private func requestNotificationPermissions() {
-        Task {
-            let _ = await appState.requestNotificationPermission()
-        }
     }
 }

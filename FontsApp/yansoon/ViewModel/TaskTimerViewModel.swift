@@ -142,7 +142,12 @@ final class TaskTimerViewModel: ObservableObject {
         if !hasHandledOverrun {
             scheduleOverrunNotificationIfNeeded()
         }
-        updateLiveActivity()
+        // If live activity was ended when user navigated back, restart it now
+        if liveActivity == nil {
+            startLiveActivity()
+        } else {
+            updateLiveActivity()
+        }
     }
 
     func primaryButtonTapped() {

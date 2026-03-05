@@ -266,10 +266,6 @@ struct ToDoView: View {
         .onAppear {
             viewModel.appState = appState
 
-            Task {
-                let _ = await appState.requestNotificationPermission()
-            }
-
             if !StorageManager.shared.didShowSettingsTip() {
                 showSettingsTip = true
                 StorageManager.shared.setDidShowSettingsTip()
@@ -476,42 +472,90 @@ struct AddTaskSheet: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var timeLimitVM = TimeLimitViewModel()
 
+    @State private var showNameError: Bool = false
+    @State private var showTimeError: Bool = false
+
+    private var titleIsEmpty: Bool {
+        viewModel.newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    private var timeIsUnset: Bool {
+        timeLimitVM.selectedMinutes < 5
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
                 Color("Background").ignoresSafeArea()
 
-                VStack(spacing: 25) {
+                ScrollView {
+                    VStack(spacing: 25) {
 
-                    // Task Name
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Task Name")
-                            .font(AppFont.main(size: 16))
-                            .foregroundColor(Color("SecondaryText"))
+                        // Task Name
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Task Name")
+                                .font(AppFont.main(size: 16))
+                                .foregroundColor(Color("SecondaryText"))
 
-                        TextField("Enter task name", text: $viewModel.newTaskTitle)
-                            .font(AppFont.main(size: 18))
-                            .foregroundColor(Color("PrimaryText"))
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color("TaskBox"))
-                            )
+                            TextField("Enter task name", text: $viewModel.newTaskTitle)
+                                .font(AppFont.main(size: 18))
+                                .foregroundColor(Color("PrimaryText"))
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color("TaskBox"))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(showNameError ? Color.red.opacity(0.7) : Color.clear, lineWidth: 1.5)
+                                        )
+                                )
+                                .submitLabel(.done)
+                                .onChange(of: viewModel.newTaskTitle) { _ in
+                                    if showNameError && !titleIsEmpty { showNameError = false }
+                                }
+
+                            if showNameError {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.circle.fill")
+                                        .font(.system(size: 11))
+                                    Text("Please enter a task name")
+                                        .font(AppFont.main(size: 12))
+                                }
+                                .foregroundColor(.red)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                        }
+
+                        // Estimated Time
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Estimated Time")
+                                .font(AppFont.main(size: 16))
+                                .foregroundColor(Color("SecondaryText"))
+
+                            if showTimeError {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.circle.fill")
+                                        .font(.system(size: 11))
+                                    Text("Please select at least 5 minutes")
+                                        .font(AppFont.main(size: 12))
+                                }
+                                .foregroundColor(.red)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                            }
+
+                            CircularSlidersheet(viewModel: timeLimitVM)
+                                .frame(height: 320)
+                                .onChange(of: timeLimitVM.selectedMinutes) { _ in
+                                    if showTimeError && !timeIsUnset { showTimeError = false }
+                                }
+                        }
+
+                        Spacer(minLength: 100)
                     }
-
-                    // Estimated Time
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Estimated Time")
-                            .font(AppFont.main(size: 16))
-                            .foregroundColor(Color("SecondaryText"))
-
-                        CircularSlidersheet(viewModel: timeLimitVM)
-                            .frame(height: 320)
-                    }
-
-                    Spacer()
+                    .padding(25)
+                    .animation(.easeInOut(duration: 0.2), value: showNameError)
+                    .animation(.easeInOut(duration: 0.2), value: showTimeError)
                 }
-                .padding(25)
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("New Task")
             .navigationBarTitleDisplayMode(.inline)
@@ -521,10 +565,12 @@ struct AddTaskSheet: View {
                         .foregroundColor(Color("PrimaryButtons"))
                 }
             }
-
-            // 🔥 This is the only structural improvement
             .safeAreaInset(edge: .bottom) {
                 Button(action: {
+                    // Validate before adding
+                    showNameError = titleIsEmpty
+                    showTimeError = timeIsUnset
+                    guard !titleIsEmpty && !timeIsUnset else { return }
                     viewModel.addTask()
                     dismiss()
                 }) {
@@ -538,27 +584,19 @@ struct AddTaskSheet: View {
                         .padding(.horizontal, 25)
                         .padding(.bottom, 10)
                 }
-                .disabled(
-                    viewModel.newTaskTitle
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                        .isEmpty ||
-                    timeLimitVM.selectedMinutes < 5
-                )
                 .background(Color("Background"))
             }
-
             .onAppear {
                 viewModel.newTaskHours = 0.0
                 viewModel.newTaskMinutes = 5.0
             }
-
             .onChange(of: timeLimitVM.selectedMinutes) { newValue in
                 viewModel.newTaskHours = Double(Int(newValue) / 60)
                 viewModel.newTaskMinutes = Double(Int(newValue) % 60)
             }
         }
     }
-    }
+}
 
 // MARK: - Energy Check-In Sheet
 struct EnergyCheckInSheet: View {

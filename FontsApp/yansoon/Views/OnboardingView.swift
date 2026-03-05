@@ -19,7 +19,7 @@ struct OnboardingView: View {
                 TabView(selection: $currentPage) {
                     
                     OnboardingPage(
-                        image: "yansoonFlower",
+                        image: "yansoonStatus/high",
                         title: "Get Started",
                         description: "Plan your tasks based on how you feel not how pressured you are.",
                         buttonTitle: "Continue"
@@ -31,7 +31,7 @@ struct OnboardingView: View {
                     .tag(0)
                     
                     OnboardingPage(
-                        image: "yansoonFlower",
+                        image: "yansoonStatus/high",
                         title: "Full Energy",
                         description: "You're at your peak today. Perfect time for deep work and big tasks.",
                         buttonTitle: "Next"
@@ -43,7 +43,7 @@ struct OnboardingView: View {
                     .tag(1)
                     
                     OnboardingPage(
-                        image: "yansoonFlower",
+                        image: "yansoonStatus/medium",
                         title: "Medium Energy",
                         description: "You're steady and productive. Great for balanced tasks.",
                         buttonTitle: "Next"
@@ -55,7 +55,7 @@ struct OnboardingView: View {
                     .tag(2)
                     
                     OnboardingPage(
-                        image: "yansoonFlower",
+                        image: "yansoonStatus/low",
                         title: "Low Energy",
                         description: "It's okay to slow down. Light tasks help protect your energy.",
                         buttonTitle: "Start"
@@ -86,37 +86,38 @@ struct OnboardingPage: View {
     
     var body: some View {
         
-        VStack(spacing: 30) {
+        VStack(spacing: 24) {
             
             Spacer()
             
-            Image(image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 160, height: 160)
-            
-            VStack(spacing: 12) {
+            VStack(spacing: 22) {
                 
-                Text(title)
-                    .font(AppFont.main(size: 24)) // same as screen titles
-                    .foregroundColor(Color("PrimaryText"))
+                Image(image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 180, height: 180)
                 
-                Text(description)
-                    .font(AppFont.main(size: 16)) // same as body text
-                    .foregroundColor(Color("SecondaryText"))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-            }
-            
-            Spacer()
-            
-            Button(action: action) {
-                Text(buttonTitle)
-                    .font(AppFont.main(size: 18)) // same as buttons in your app
-                    .foregroundColor(.black)
-                    .frame(width: 140, height: 44)
-                    .background(Color("PrimaryButtons"))
-                    .cornerRadius(12)
+                VStack(spacing: 10) {
+                    
+                    Text(title)
+                        .font(AppFont.main(size: 29))
+                        .foregroundColor(Color("PrimaryText"))
+                    
+                    Text(description)
+                        .font(AppFont.main(size: 20))
+                        .foregroundColor(Color("SecondaryText"))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
+                
+                Button(action: action) {
+                    Text(buttonTitle)
+                        .font(AppFont.main(size: 22))
+                        .foregroundColor(.black)
+                        .frame(width: 150, height: 50)
+                        .background(Color("PrimaryButtons"))
+                        .cornerRadius(14)
+                }
             }
             
             Spacer()
@@ -129,12 +130,17 @@ struct PageIndicator: View {
     var currentPage: Int
     
     var body: some View {
+        
         HStack(spacing: 8) {
             
             ForEach(0..<4) { index in
                 
                 Circle()
-                    .fill(index == currentPage ? Color("PrimaryButtons") : Color.gray.opacity(0.3))
+                    .fill(
+                        index == currentPage
+                        ? Color("PrimaryButtons")
+                        : Color.gray.opacity(0.3)
+                    )
                     .frame(width: 8, height: 8)
             }
         }

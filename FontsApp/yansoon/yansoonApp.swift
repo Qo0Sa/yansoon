@@ -1,9 +1,9 @@
-
 //  yansoonApp.swift
 //  yansoon
 //
 import SwiftUI
 import TipKit
+import UserNotifications
 
 @main
 struct yansoonApp: App {
@@ -13,6 +13,8 @@ struct yansoonApp: App {
     
     init() {
         try? Tips.configure()
+        // Clear any stale badge count on every launch
+        UNUserNotificationCenter.current().setBadgeCount(0)
     }
     
     

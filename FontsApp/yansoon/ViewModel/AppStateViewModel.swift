@@ -1,13 +1,10 @@
 //
 //  AppStateViewModel.swift
 //  yansoon
-//
-//
-//  AppStateViewModel.swift
-//  yansoon
-//
+
 
 import Foundation
+import UserNotifications
 import SwiftUI
 import Combine
 
@@ -131,6 +128,8 @@ final class AppStateViewModel: ObservableObject {
     // MARK: - Part 3: Return to App Logic
     /// Called when the app becomes active to check if a "Done" pop-up is pending
     func handleReturnToApp() {
+        // Clear app icon badge whenever user opens the app
+        UNUserNotificationCenter.current().setBadgeCount(0)
         if UserDefaults.standard.bool(forKey: "pending_done_check") {
             showPostTaskPopUp = true
             UserDefaults.standard.set(false, forKey: "pending_done_check")

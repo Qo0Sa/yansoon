@@ -19,7 +19,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     /// Requests user permission for notifications
     func requestAuthorization() async -> Bool {
         do {
-            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
             print(granted ? "✅ Notification Permission Granted" : "❌ Notification Permission Denied")
             return granted
         } catch {
@@ -41,6 +41,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             content.title = title
             content.body = body
             content.sound = .default
+            content.badge = 0
             
             // Trigger in 1 second
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -56,28 +57,6 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
     
-    /// Sends the overrun notification with a fixed identifier so it can be cancelled on foreground return
-    func sendOverrunNotification(taskId: String) {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            guard settings.authorizationStatus == .authorized else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = "Time Exceeded!"
-            content.body = "Your task timer has been paused. Open Yansoon to continue."
-            content.sound = .default
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-            let identifier = "overrun-\(taskId)"
-            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    print("❌ Error scheduling overrun notification: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-
     func cancelAllNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()

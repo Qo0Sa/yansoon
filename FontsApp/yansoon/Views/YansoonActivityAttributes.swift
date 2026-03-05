@@ -2,7 +2,9 @@
 //  YansoonActivityAttributes.swift
 //  yansoon
 //
-
+//  ⚠️ In Xcode: Add this file to BOTH the main app target AND the widget extension target.
+//  (Select the file → File Inspector → Target Membership → tick both)
+//
 
 import ActivityKit
 import Foundation

@@ -223,6 +223,7 @@ struct TaskTimerView: View {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button {
                     vm.pause()
+                    vm.endLiveActivityForBackground()
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.backward")

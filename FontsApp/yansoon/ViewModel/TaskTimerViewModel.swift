@@ -208,7 +208,7 @@ final class TaskTimerViewModel: ObservableObject {
             model.overrunSeconds = abs(remaining)
             
             // Auto-pause on overrun — only once, guarded so resume works freely after
-            if model.overrunSeconds >= 10 && model.state == .running && !hasHandledOverrun {
+            if model.overrunSeconds >= 1 && model.state == .running && !hasHandledOverrun {
                 hasHandledOverrun = true
                 pause()
                 if isAppInForeground {
@@ -254,6 +254,12 @@ final class TaskTimerViewModel: ObservableObject {
         }
     }
 
+    /// Ends the Live Activity when user navigates back (task is paused, not done).
+    /// Does NOT affect task state — just removes the banner.
+    func endLiveActivityForBackground() {
+        endLiveActivity()
+    }
+
     /// Ends and dismisses the Live Activity.
     private func endLiveActivity() {
         guard let activity = liveActivity else { return }
@@ -269,8 +275,14 @@ final class TaskTimerViewModel: ObservableObject {
         let elapsed = (model.totalSeconds - model.remainingSeconds) + model.overrunSeconds
         // Virtual start date = now minus elapsed, so Text(.timer) ticks correctly without updates
         let virtualStart = Date().addingTimeInterval(-Double(elapsed))
-        // Exact expiry = virtual start + total estimated seconds
-        let expiry = virtualStart.addingTimeInterval(Double(model.totalSeconds))
+
+        // expiryDate tells TimelineView when to auto-switch to red.
+        // If already overrun or paused, use .distantFuture so TimelineView never
+        // fires — isOverrun/isPaused flags already handle the display correctly.
+        let alreadyHandled = model.overrunSeconds > 0 || model.state == .paused
+        let expiry: Date = alreadyHandled
+            ? .distantFuture
+            : virtualStart.addingTimeInterval(Double(model.totalSeconds))
 
         return YansoonActivityAttributes.ContentState(
             timerStartDate: virtualStart,

@@ -2,7 +2,8 @@
 //  YansoonLiveActivityView.swift
 //  YansoonWidgetExtension
 //
-
+//  ⚠️ This file belongs ONLY in the Widget Extension target.
+//
 
 import ActivityKit
 import SwiftUI
@@ -170,13 +171,8 @@ struct YansoonLiveActivity: Widget {
         ActivityConfiguration(for: YansoonActivityAttributes.self) { context in
 
             // ── Lock Screen / StandBy banner ──────────────────────────────
-            // TimelineView triggers a re-render at expiry so color/state
-            // auto-switches to red/frozen even while the app is suspended
-            TimelineView(.explicit([context.state.expiryDate])) { timeline in
-                let autoOverrun = !context.state.isPaused &&
-                                  timeline.date >= context.state.expiryDate
-                LockScreenView(context: context, autoOverrun: autoOverrun)
-            }
+            // State is pushed by ViewModel — no TimelineView needed
+            LockScreenView(context: context)
 
         } dynamicIsland: { context in
             DynamicIsland {
@@ -192,39 +188,25 @@ struct YansoonLiveActivity: Widget {
                 }
             } compactLeading: {
                 // ── Dynamic Island compact ────────────────────────────────
-                TimelineView(.explicit([context.state.expiryDate])) { timeline in
-                    let over = context.state.isOverrun ||
-                               (!context.state.isPaused && timeline.date >= context.state.expiryDate)
-                    ZStack {
-                        YansoonMark(size: 20)
-                        if over {
-                            Circle()
-                                .stroke(Color.red, lineWidth: 1.5)
-                                .frame(width: 22, height: 22)
-                        }
+                ZStack {
+                    YansoonMark(size: 20)
+                    if context.state.isOverrun {
+                        Circle()
+                            .stroke(Color.red, lineWidth: 1.5)
+                            .frame(width: 22, height: 22)
                     }
                 }
 
             } compactTrailing: {
-                TimelineView(.explicit([context.state.expiryDate])) { timeline in
-                    let over = context.state.isOverrun ||
-                               (!context.state.isPaused && timeline.date >= context.state.expiryDate)
-                    let paused = context.state.isPaused || over
-                    TimerLabel(context: context, style: .compact,
-                               overrideOverrun: over, overridePaused: paused)
-                }
+                TimerLabel(context: context, style: .compact)
 
             } minimal: {
-                TimelineView(.explicit([context.state.expiryDate])) { timeline in
-                    let over = context.state.isOverrun ||
-                               (!context.state.isPaused && timeline.date >= context.state.expiryDate)
-                    ZStack {
-                        YansoonMark(size: 16)
-                        if over {
-                            Circle()
-                                .stroke(Color.red, lineWidth: 1)
-                                .frame(width: 18, height: 18)
-                        }
+                ZStack {
+                    YansoonMark(size: 16)
+                    if context.state.isOverrun {
+                        Circle()
+                            .stroke(Color.red, lineWidth: 1)
+                            .frame(width: 18, height: 18)
                     }
                 }
             }
@@ -238,10 +220,9 @@ struct YansoonLiveActivity: Widget {
 
 private struct LockScreenView: View {
     let context: ActivityViewContext<YansoonActivityAttributes>
-    var autoOverrun: Bool = false
 
-    private var isOverrun: Bool { context.state.isOverrun || autoOverrun }
-    private var isPaused:  Bool { context.state.isPaused  || autoOverrun }
+    private var isOverrun: Bool { context.state.isOverrun }
+    private var isPaused:  Bool { context.state.isPaused  }
 
     private var accentColor: Color {
         isOverrun ? .red : Color(red: 0.98, green: 0.57, blue: 0.01)
@@ -372,10 +353,13 @@ private struct TimerLabel: View {
 
     var body: some View {
         Group {
-            if isPaused || isOverrun {
+            if isPaused {
+                // Frozen when paused (or overrun+paused)
                 Text(formattedElapsed)
             } else {
+                // Live ticking — even when overrun, timer keeps counting up
                 Text(context.state.timerStartDate, style: .timer)
+                    .foregroundStyle(isOverrun ? .red : .white)
             }
         }
         .font(.system(size: fontSize, weight: .semibold).monospacedDigit())
